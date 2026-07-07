@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sheet Transposer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: "#0f172a",
+            card: "#1e293b",
+            accent: "#6366f1",
+            "accent-hover": "#4f46e5",
+            muted: "#94a3b8",
+            "app-border": "#334155",
+            "app-error": "#f87171",
+            "app-ok": "#34d399",
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="m-0 min-h-screen bg-bg px-4 py-12 text-slate-200 font-sans flex justify-center items-start">
+  <div class="w-full max-w-md rounded-2xl border border-app-border bg-card p-8 shadow-2xl shadow-black/40">
+    <h1 class="mb-1 text-2xl font-semibold">Sheet Transposer</h1>
+    <p class="mb-6 text-sm text-muted">Upload a chord sheet (.docx), pick the keys, and download the transposed version.</p>
+
+    <form id="form">
+      <label for="file" class="mb-1.5 mt-4 block text-sm text-muted">Chord sheet (.docx)</label>
+      <input
+        id="file"
+        name="file"
+        type="file"
+        accept=".docx"
+        required
+        class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-white hover:file:bg-accent-hover"
+      />
+
+      <div class="flex gap-3">
+        <div class="flex-1">
+          <label for="current_key" class="mb-1.5 mt-4 block text-sm text-muted">Current key</label>
+          <select
+            id="current_key"
+            name="current_key"
+            required
+            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200"
+          >
+            {% for key in keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="flex-1">
+          <label for="target_key" class="mb-1.5 mt-4 block text-sm text-muted">Desired key</label>
+          <select
+            id="target_key"
+            name="target_key"
+            required
+            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200"
+          >
+            {% for key in keys %}<option value="{{ key }}"{% if key == "D" %} selected{% endif %}>{{ key }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <button
+        id="submit"
+        type="submit"
+        class="mt-6 w-full rounded-xl bg-accent px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Transpose &amp; Download
+      </button>
+    </form>
+
+    <div id="message" class="mt-4 hidden whitespace-pre-wrap break-words rounded-xl px-3.5 py-3 text-sm"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("form");
+    const submit = document.getElementById("submit");
+    const message = document.getElementById("message");
+
+    const BASE_CLASSES = "mt-4 whitespace-pre-wrap break-words rounded-xl px-3.5 py-3 text-sm";
+    const ERROR_CLASSES = "border border-app-error/30 bg-app-error/10 text-app-error";
+    const OK_CLASSES = "border border-app-ok/30 bg-app-ok/10 text-app-ok";
+
+    function hideMessage() {
+      message.className = BASE_CLASSES + " hidden";
+    }
+
+    function show(kind, text) {
+      message.className = BASE_CLASSES + " " + (kind === "error" ? ERROR_CLASSES : OK_CLASSES);
+      message.textContent = text;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      hideMessage();
+      submit.disabled = true;
+      submit.textContent = "Transposing...";
+
+      try {
+        const response = await fetch("/transpose", { method: "POST", body: new FormData(form) });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ error: "Something went wrong." }));
+          show("error", data.error || "Something went wrong.");
+          return;
+        }
+
+        const from = response.headers.get("X-Transpose-From") || "?";
+        const to = response.headers.get("X-Transpose-To") || "?";
+        const changes = response.headers.get("X-Transpose-Changes") || "none";
+
+        const disposition = response.headers.get("Content-Disposition") || "";
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match ? match[1] : "transposed.docx";
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        show("ok", `Transposed from ${from} to ${to}.\nChanges: ${changes}`);
+      } catch (err) {
+        show("error", "Network error. Please try again.");
+      } finally {
+        submit.disabled = false;
+        submit.textContent = "Transpose & Download";
+      }
+    });
+  </script>
+</body>
+</html>

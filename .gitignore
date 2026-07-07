@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Testing & coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Linting
+.ruff_cache/
+.mypy_cache/
+
+# Runtime data
+input/*.docx
+input/*.doc
+input/.~lock.*
+output/*.docx
+output/*.doc
+output/.~lock.*
+
+# Docker
+.dockerignore
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Kilo
+.kilo/
