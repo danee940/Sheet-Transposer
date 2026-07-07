@@ -36,9 +36,37 @@ NOTE_TO_SEMITONE = {
     "H#": 0,
 }
 
+GERMAN_NOTE_NAMES = {
+    "C": 0,
+    "Cis": 1,
+    "Des": 1,
+    "D": 2,
+    "Dis": 3,
+    "Es": 3,
+    "Eis": 5,
+    "E": 4,
+    "Fes": 4,
+    "F": 5,
+    "Fis": 6,
+    "Ges": 6,
+    "G": 7,
+    "Gis": 8,
+    "As": 8,
+    "A": 9,
+    "Ais": 10,
+    "B": 10,
+    "His": 0,
+    "H": 11,
+    "Ces": 11,
+}
+
 GERMAN_NOTE_TO_SEMITONE = dict(NOTE_TO_SEMITONE)
 GERMAN_NOTE_TO_SEMITONE["B"] = 10
 GERMAN_NOTE_TO_SEMITONE["Bb"] = 9
+GERMAN_NOTE_TO_SEMITONE.update(GERMAN_NOTE_NAMES)
+
+GERMAN_ROOT_NAMES = sorted(GERMAN_NOTE_NAMES, key=len, reverse=True)
+GERMAN_ONLY_ROOTS_KEYS = {name for name in GERMAN_NOTE_NAMES if name not in NOTE_TO_SEMITONE}
 
 SHARP_KEYS = {"G", "D", "A", "E", "B", "F#", "C#", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "A#m"}
 FLAT_KEYS = {"F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb", "Dm", "Gm", "Cm", "Fm", "Bbm", "Ebm", "Abm"}
@@ -46,10 +74,10 @@ FLAT_KEYS = {"F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb", "Dm", "Gm", "Cm", "Fm", "B
 SHARP_SPELLING = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 FLAT_SPELLING = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
-GERMAN_SHARP_SPELLING = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"]
-GERMAN_FLAT_SPELLING = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "B", "H"]
+GERMAN_SHARP_SPELLING = ["C", "Cis", "D", "Dis", "E", "F", "Fis", "G", "Gis", "A", "B", "H"]
+GERMAN_FLAT_SPELLING = ["C", "Des", "D", "Es", "E", "F", "Ges", "G", "As", "A", "B", "H"]
 
-ROOT_PATTERN = r"[A-Ha-h](?:#|b)?"
+ROOT_PATTERN = r"(?:Cis|Des|Dis|Eis|Fis|Ges|Gis|Ais|His|Ces|Fes|Es|As|[A-Ha-h](?:#|b)?)"
 QUALITY_PATTERN = r"(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø|\d|#|b|-|\(|\)|,)*"
 CHORD_TOKEN_RE = re.compile(
     rf"^{ROOT_PATTERN}{QUALITY_PATTERN}(?:/{ROOT_PATTERN}{QUALITY_PATTERN})?$"
@@ -58,11 +86,23 @@ ROOT_MATCH_RE = re.compile(rf"^({ROOT_PATTERN})(.*)$")
 TOKEN_SPLIT_RE = re.compile(r"(\S+)(\s*)")
 
 
+def _is_minor_suffix(rest):
+    """Return True if the trailing text denotes a minor key."""
+    return rest.strip().lower() in ("m", "min", "minor")
+
+
 def parse_key(raw):
     """Parse a raw key string into a (note, is_minor) tuple, or None if invalid."""
     text = raw.strip()
     if not text:
         return None
+
+    for name in GERMAN_ROOT_NAMES:
+        if len(name) > 1 and text[: len(name)].capitalize() == name:
+            rest = text[len(name) :]
+            if rest == "" or _is_minor_suffix(rest):
+                return name, _is_minor_suffix(rest)
+
     root = text[0].upper()
     rest = text[1:]
     accidental = ""
@@ -72,8 +112,7 @@ def parse_key(raw):
     note = root + accidental
     if note not in NOTE_TO_SEMITONE:
         return None
-    minor = rest.strip().lower() in ("m", "min", "minor")
-    return note, minor
+    return note, _is_minor_suffix(rest)
 
 
 def key_label(note, minor):
@@ -105,14 +144,47 @@ def note_semitone(note, german):
     return table[key]
 
 
+def key_semitone(note, german):
+    """Return the semitone index for a parsed key note.
+
+    German-only names such as Es or Cis resolve via the German table regardless
+    of the document flag, while ambiguous names (e.g. B) keep their meaning for
+    the active notation so an English key B stays B natural.
+    """
+    canonical = note[0].upper() + note[1:]
+    if canonical in GERMAN_ONLY_ROOTS_KEYS:
+        return GERMAN_NOTE_TO_SEMITONE[canonical]
+    return note_semitone(note, german)
+
+
 def transpose_note(note, semitones, spelling, german):
     """Transpose a single note name by the given number of semitones."""
     semitone = (note_semitone(note, german) + semitones) % 12
     return spelling[semitone]
 
 
+PUNCTUATION = "().,;:…\"'-"
+
+
+def split_affixes(token):
+    """Split a token into (leading_punctuation, core, trailing_punctuation)."""
+    start = 0
+    while start < len(token) and token[start] in PUNCTUATION:
+        start += 1
+    end = len(token)
+    while end > start and token[end - 1] in PUNCTUATION:
+        end -= 1
+    return token[:start], token[start:end], token[end:]
+
+
 def transpose_chord(chord, semitones, spelling, german):
     """Transpose a chord symbol (including optional bass note) by semitones."""
+    leading, core, trailing = split_affixes(chord)
+    if core != chord:
+        if not CHORD_TOKEN_RE.match(core):
+            return chord
+        return leading + transpose_chord(core, semitones, spelling, german) + trailing
+
     match = ROOT_MATCH_RE.match(chord)
     if not match:
         return chord
@@ -127,22 +199,61 @@ def transpose_chord(chord, semitones, spelling, german):
     return new_root + remainder
 
 
+def is_chord_token(token):
+    """Return True if the bare token (ignoring surrounding punctuation) is a chord symbol."""
+    core = token.strip("().,;:…\"'-")
+    return bool(core) and bool(CHORD_TOKEN_RE.match(core))
+
+
+def _is_decoration(token):
+    """Return True if a non-chord token is punctuation or a section label, not a lyric word."""
+    _, core, _ = split_affixes(token)
+    if core == "":
+        return True
+    if core.endswith(":") or ":" in token:
+        return True
+    return core.isupper()
+
+
 def is_chord_line(text):
-    """Return True if every whitespace-separated token in text is a valid chord symbol."""
+    """Return True if the line is a chord line rather than lyrics.
+
+    A line qualifies when every token is a chord symbol, or when it contains at
+    least one chord and every remaining token is a decoration (punctuation or a
+    section label). This tolerates lines like '(Vége: Es B/d F/c B )' while
+    still rejecting lyric lines that merely contain a stray chord-like word.
+    """
     tokens = text.split()
     if not tokens:
         return False
-    return all(CHORD_TOKEN_RE.match(token) for token in tokens)
+    chord_count = 0
+    for token in tokens:
+        if is_chord_token(token):
+            chord_count += 1
+        elif not _is_decoration(token):
+            return False
+    return chord_count > 0
+
+
+GERMAN_ONLY_ROOTS = {name.upper() for name in GERMAN_NOTE_NAMES if len(name) > 1}
+GERMAN_ONLY_ROOTS.add("H")
+
+
+def _token_roots(token):
+    """Yield each note root (main and bass) found in a chord token."""
+    _, core, _ = split_affixes(token)
+    for part in core.split("/"):
+        match = ROOT_MATCH_RE.match(part)
+        if match:
+            yield match.group(1)
 
 
 def line_uses_german(text):
-    """Return True if the line contains any German-notation note (H)."""
+    """Return True if the line contains an unambiguously German note name (H, Es, As, Cis…)."""
     for token in text.split():
-        match = ROOT_MATCH_RE.match(token)
-        if match and match.group(1).upper().startswith("H"):
-            return True
-        if "/H" in token or token.startswith("H"):
-            return True
+        for root in _token_roots(token):
+            if root.upper() in GERMAN_ONLY_ROOTS:
+                return True
     return False
 
 
@@ -155,7 +266,10 @@ def transpose_line_text(text, semitones, spelling, german, changes):
     for token_match in TOKEN_SPLIT_RE.finditer(body):
         chord = token_match.group(1)
         trailing = token_match.group(2)
-        transposed = transpose_chord(chord, semitones, spelling, german)
+        if is_chord_token(chord):
+            transposed = transpose_chord(chord, semitones, spelling, german)
+        else:
+            transposed = chord
         if transposed != chord:
             changes.add((chord, transposed))
 
@@ -185,6 +299,18 @@ def _transpose_token_with_owners(chord, owners, semitones, spelling, german):
     Owners for the root and bass note come from the original note's first character,
     so the surrounding formatting (e.g. superscript suffix runs) is kept intact.
     """
+    leading, core, trailing = split_affixes(chord)
+    if core != chord:
+        if not CHORD_TOKEN_RE.match(core):
+            return chord, owners
+        core_owners = owners[len(leading) : len(leading) + len(core)]
+        new_core, new_core_owners = _transpose_token_with_owners(
+            core, core_owners, semitones, spelling, german
+        )
+        new_chord = leading + new_core + trailing
+        new_owners = owners[: len(leading)] + new_core_owners + owners[len(leading) + len(core) :]
+        return new_chord, new_owners
+
     match = ROOT_MATCH_RE.match(chord)
     if not match:
         return chord, owners
@@ -238,9 +364,12 @@ def transpose_line_with_owners(text, owners, semitones, spelling, german):
         chord_owners = body_owners[start : start + len(chord)]
         trailing_owners = body_owners[start + len(chord) : token_match.end(2)]
 
-        new_chord, new_chord_owners = _transpose_token_with_owners(
-            chord, chord_owners, semitones, spelling, german
-        )
+        if is_chord_token(chord):
+            new_chord, new_chord_owners = _transpose_token_with_owners(
+                chord, chord_owners, semitones, spelling, german
+            )
+        else:
+            new_chord, new_chord_owners = chord, list(chord_owners)
 
         diff = len(new_chord) - len(chord)
         if diff > 0:
@@ -378,7 +507,7 @@ def transpose_document_bytes(file_bytes, current_key, target_key):
     document = Document(BytesIO(file_bytes))
     german = detect_german(document)
 
-    semitones = (note_semitone(target_note, german) - note_semitone(current_note, german)) % 12
+    semitones = (key_semitone(target_note, german) - key_semitone(current_note, german)) % 12
     use_flats = prefers_flats(target_note, target_minor)
 
     changes = _transpose_document(document, semitones, use_flats, german)
@@ -408,7 +537,7 @@ def main():
     document = Document(str(input_file))
     german = detect_german(document)
 
-    semitones = (note_semitone(target_note, german) - note_semitone(current_note, german)) % 12
+    semitones = (key_semitone(target_note, german) - key_semitone(current_note, german)) % 12
     use_flats = prefers_flats(target_note, target_minor)
 
     changes = _transpose_document(document, semitones, use_flats, german)

@@ -59,6 +59,21 @@ class TestParseKey:
     def test_sharp_minor(self):
         assert t.parse_key("C#m") == ("C#", True)
 
+    def test_german_es_note(self):
+        assert t.parse_key("Es") == ("Es", False)
+
+    def test_german_as_minor(self):
+        assert t.parse_key("Asm") == ("As", True)
+
+    def test_german_cis_note(self):
+        assert t.parse_key("Cis") == ("Cis", False)
+
+    def test_german_lowercase_es(self):
+        assert t.parse_key("es") == ("Es", False)
+
+    def test_german_name_with_trailing_word_falls_through(self):
+        assert t.parse_key("Est") == ("E", False)
+
 
 # ---------------------------------------------------------------------------
 # key_label
@@ -119,6 +134,28 @@ class TestChooseSpelling:
 
     def test_sharp_german(self):
         assert t.choose_spelling(False, True) is t.GERMAN_SHARP_SPELLING
+
+
+# ---------------------------------------------------------------------------
+# key_semitone
+# ---------------------------------------------------------------------------
+
+
+class TestKeySemitone:
+    def test_german_only_name_resolves_without_german_flag(self):
+        assert t.key_semitone("Es", False) == 3
+
+    def test_german_only_name_resolves_with_german_flag(self):
+        assert t.key_semitone("Es", True) == 3
+
+    def test_cis_resolves_without_german_flag(self):
+        assert t.key_semitone("Cis", False) == 1
+
+    def test_english_b_stays_natural(self):
+        assert t.key_semitone("B", False) == 11
+
+    def test_german_b_is_flat(self):
+        assert t.key_semitone("B", True) == 10
 
 
 # ---------------------------------------------------------------------------
@@ -800,3 +837,160 @@ class TestTransposeDocumentBytes:
         _, from_label, to_label, _ = t.transpose_document_bytes(file_bytes, "Am", "Bm")
         assert from_label == "Am"
         assert to_label == "Bm"
+
+    def test_german_target_key_on_english_document(self):
+        file_bytes = _make_docx_bytes(["C G Am F"])
+        _, from_label, to_label, changes = t.transpose_document_bytes(file_bytes, "C", "Es")
+        assert from_label == "C"
+        assert to_label == "Es"
+        assert ("C", "Eb") in changes
+
+    def test_german_current_key_on_english_document(self):
+        file_bytes = _make_docx_bytes(["C G Am F"])
+        _, from_label, to_label, _ = t.transpose_document_bytes(file_bytes, "Cis", "C")
+        assert from_label == "Cis"
+        assert to_label == "C"
+
+
+# ---------------------------------------------------------------------------
+# German note handling
+# ---------------------------------------------------------------------------
+
+
+class TestGermanNotes:
+    def test_es_is_e_flat(self):
+        assert t.note_semitone("Es", True) == 3
+
+    def test_as_is_a_flat(self):
+        assert t.note_semitone("As", True) == 8
+
+    def test_german_b_is_b_flat(self):
+        assert t.note_semitone("B", True) == 10
+
+    def test_cis_is_c_sharp(self):
+        assert t.note_semitone("Cis", True) == 1
+
+    def test_transpose_es_up_two_uses_german_spelling(self):
+        assert t.transpose_note("Es", 2, t.GERMAN_FLAT_SPELLING, True) == "F"
+
+    def test_transpose_into_flat_produces_german_name(self):
+        assert t.transpose_note("C", 3, t.GERMAN_FLAT_SPELLING, True) == "Es"
+
+    def test_transpose_into_sharp_produces_german_name(self):
+        assert t.transpose_note("C", 1, t.GERMAN_SHARP_SPELLING, True) == "Cis"
+
+    def test_transpose_chord_german_slash(self):
+        result = t.transpose_chord("B/d", 2, t.GERMAN_FLAT_SPELLING, True)
+        assert result == "C/E"
+
+    def test_line_uses_german_detects_es(self):
+        assert t.line_uses_german("Es gm B F") is True
+
+    def test_line_uses_german_detects_as(self):
+        assert t.line_uses_german("As Des") is True
+
+    def test_line_without_german_names(self):
+        assert t.line_uses_german("C G Am F") is False
+
+
+# ---------------------------------------------------------------------------
+# split_affixes / punctuation handling
+# ---------------------------------------------------------------------------
+
+
+class TestSplitAffixes:
+    def test_no_affixes(self):
+        assert t.split_affixes("Am") == ("", "Am", "")
+
+    def test_trailing_ellipsis(self):
+        assert t.split_affixes("B…") == ("", "B", "…")
+
+    def test_wrapping_parentheses(self):
+        assert t.split_affixes("(C)") == ("(", "C", ")")
+
+    def test_all_punctuation(self):
+        assert t.split_affixes("...") == ("...", "", "")
+
+
+class TestPunctuationTransposition:
+    def test_chord_with_trailing_ellipsis(self):
+        assert t.transpose_chord("B…", 1, t.SHARP_SPELLING, False) == "C…"
+
+    def test_non_chord_core_left_untouched(self):
+        assert t.transpose_chord("(the)", 2, t.SHARP_SPELLING, False) == "(the)"
+
+
+# ---------------------------------------------------------------------------
+# is_chord_token / is_chord_line decoration handling
+# ---------------------------------------------------------------------------
+
+
+class TestChordLineDecorations:
+    def test_chord_with_punctuation_is_chord_token(self):
+        assert t.is_chord_token("B…") is True
+
+    def test_word_is_not_chord_token(self):
+        assert t.is_chord_token("the") is False
+
+    def test_line_with_label_and_chords(self):
+        assert t.is_chord_line("(Vége: Es B/d F/c B )") is True
+
+    def test_line_with_section_label(self):
+        assert t.is_chord_line("REF: C G Am") is True
+
+    def test_lyric_line_with_chord_word_rejected(self):
+        assert t.is_chord_line("C the G") is False
+
+    def test_pure_lyric_line_rejected(self):
+        assert t.is_chord_line("Nem számít hol jártam") is False
+
+    def test_line_with_no_chords_rejected(self):
+        assert t.is_chord_line("(Vége: )") is False
+
+
+class TestChordLineWithOwnersPunctuation:
+    def _run(self, text, semitones=1, use_flats=False, german=False):
+        owners = [0] * len(text)
+        spelling = t.choose_spelling(use_flats, german)
+        return t.transpose_line_with_owners(text, owners, semitones, spelling, german)
+
+    def test_transposes_chords_keeps_decorations(self):
+        new_text, new_owners = self._run("(Vége: B )", german=True)
+        assert new_text == "(Vége: H )"
+        assert len(new_text) == len(new_owners)
+
+    def test_trailing_ellipsis_preserved(self):
+        new_text, new_owners = self._run("B…")
+        assert new_text == "C…"
+        assert len(new_text) == len(new_owners)
+
+    def test_non_chord_word_left_untouched(self):
+        new_text, _ = self._run("the")
+        assert new_text == "the"
+
+
+class TestTransposeTokenWithOwnersDirect:
+    def test_non_root_token_returns_unchanged(self):
+        owners = [0, 0]
+        result, result_owners = t._transpose_token_with_owners(
+            "3x", owners, 2, t.SHARP_SPELLING, False
+        )
+        assert result == "3x"
+        assert result_owners == owners
+
+    def test_punctuated_non_chord_returns_unchanged(self):
+        owners = [0, 0, 0, 0, 0]
+        result, result_owners = t._transpose_token_with_owners(
+            "(the)", owners, 2, t.SHARP_SPELLING, False
+        )
+        assert result == "(the)"
+        assert result_owners == owners
+
+
+class TestTransposeLineTextNonChord:
+    def test_non_chord_tokens_are_preserved(self):
+        spelling = t.choose_spelling(False, False)
+        changes = set()
+        result = t.transpose_line_text("(Vége: C )", 2, spelling, False, changes)
+        assert result == "(Vége: D )"
+        assert ("C", "D") in changes
