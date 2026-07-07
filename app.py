@@ -1,6 +1,5 @@
 """Flask web frontend for transposing chord sheets in .docx format."""
 
-import os
 from io import BytesIO
 
 from flask import Flask, jsonify, render_template, request, send_file
@@ -103,5 +102,5 @@ if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
         port=5000,
-        debug=os.environ.get("FLASK_DEBUG") == "1",
+        debug=True,
     )
