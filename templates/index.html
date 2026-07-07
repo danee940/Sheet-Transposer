@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,57 +25,43 @@
     };
   </script>
 </head>
+
 <body class="m-0 min-h-screen bg-bg px-4 py-12 text-slate-200 font-sans flex justify-center items-start">
   <div class="w-full max-w-md rounded-2xl border border-app-border bg-card p-8 shadow-2xl shadow-black/40">
     <h1 class="mb-1 text-2xl font-semibold">Sheet Transposer</h1>
-    <p class="mb-6 text-sm text-muted">Upload a chord sheet (.docx), pick the keys, and download the transposed version.</p>
+    <p class="mb-6 text-sm text-muted">Upload a chord sheet (.docx), pick the keys, and download the transposed version.
+    </p>
 
     <form id="form">
       <label for="file" class="mb-1.5 mt-4 block text-sm text-muted">Chord sheet (.docx)</label>
-      <input
-        id="file"
-        name="file"
-        type="file"
-        accept=".docx"
-        required
-        class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-white hover:file:bg-accent-hover"
-      />
+      <input id="file" name="file" type="file" accept=".docx" required
+        class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-white hover:file:bg-accent-hover" />
 
       <div class="flex gap-3">
         <div class="flex-1">
           <label for="current_key" class="mb-1.5 mt-4 block text-sm text-muted">Current key</label>
-          <select
-            id="current_key"
-            name="current_key"
-            required
-            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200"
-          >
+          <select id="current_key" name="current_key" required
+            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
             {% for key in keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}
           </select>
         </div>
         <div class="flex-1">
           <label for="target_key" class="mb-1.5 mt-4 block text-sm text-muted">Desired key</label>
-          <select
-            id="target_key"
-            name="target_key"
-            required
-            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200"
-          >
-            {% for key in keys %}<option value="{{ key }}"{% if key == "D" %} selected{% endif %}>{{ key }}</option>{% endfor %}
+          <select id="target_key" name="target_key" required
+            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
+            {% for key in keys %}&lt;option value="{{ key }}"{% if key == "D" %} selected{% endif %}&gt;{{ key }}
+            </option>{% endfor %}
           </select>
         </div>
       </div>
 
-      <button
-        id="submit"
-        type="submit"
-        class="mt-6 w-full rounded-xl bg-accent px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button id="submit" type="submit"
+        class="mt-6 w-full rounded-xl bg-accent px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60">
         Transpose &amp; Download
       </button>
     </form>
 
-    <div id="message" class="mt-4 hidden whitespace-pre-wrap break-words rounded-xl px-3.5 py-3 text-sm"></div>
+    <div id="message" class="mt-4 hidden rounded-xl px-3.5 py-3 text-sm"></div>
   </div>
 
   <script>
@@ -82,17 +69,46 @@
     const submit = document.getElementById("submit");
     const message = document.getElementById("message");
 
-    const BASE_CLASSES = "mt-4 whitespace-pre-wrap break-words rounded-xl px-3.5 py-3 text-sm";
+    const BASE_CLASSES = "mt-4 rounded-xl px-3.5 py-3 text-sm";
     const ERROR_CLASSES = "border border-app-error/30 bg-app-error/10 text-app-error";
     const OK_CLASSES = "border border-app-ok/30 bg-app-ok/10 text-app-ok";
 
     function hideMessage() {
       message.className = BASE_CLASSES + " hidden";
+      message.innerHTML = "";
     }
 
     function show(kind, text) {
       message.className = BASE_CLASSES + " " + (kind === "error" ? ERROR_CLASSES : OK_CLASSES);
       message.textContent = text;
+    }
+
+    function showTransposeResult(from, to, changesRaw) {
+      message.className = BASE_CLASSES + " " + OK_CLASSES;
+
+      const pairs = changesRaw
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(s => s.split("->"));
+
+      const rows = pairs.map(([orig, transposed]) => `
+        <tr class="border-t border-app-ok/20">
+          <td class="py-1 pr-4 font-mono">${orig}</td>
+          <td class="py-1 font-mono">${transposed}</td>
+        </tr>`).join("");
+
+      message.innerHTML = `
+        <div class="mb-2 font-semibold">Transposed from ${from} to ${to}</div>
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="text-left opacity-60">
+              <th class="pb-1 pr-4 font-medium">Before</th>
+              <th class="pb-1 font-medium">After</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
     }
 
     form.addEventListener("submit", async (event) => {
@@ -138,4 +154,5 @@
     });
   </script>
 </body>
+
 </html>
