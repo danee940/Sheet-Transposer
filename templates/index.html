@@ -125,9 +125,9 @@
           return;
         }
 
-        const from = response.headers.get("X-Transpose-From") || "?";
-        const to = response.headers.get("X-Transpose-To") || "?";
-        const changes = response.headers.get("X-Transpose-Changes") || "none";
+        const from = decodeURIComponent(response.headers.get("X-Transpose-From") || "?");
+        const to = decodeURIComponent(response.headers.get("X-Transpose-To") || "?");
+        const changes = decodeURIComponent(response.headers.get("X-Transpose-Changes") || "none");
 
         const disposition = response.headers.get("Content-Disposition") || "";
         const match = disposition.match(/filename="?([^"]+)"?/);

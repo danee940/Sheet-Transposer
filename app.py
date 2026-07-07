@@ -1,6 +1,7 @@
 """Flask web frontend for transposing chord sheets in .docx format."""
 
 from io import BytesIO
+from urllib.parse import quote
 
 from flask import Flask, jsonify, render_template, request, send_file
 
@@ -92,9 +93,9 @@ def transpose():
         as_attachment=True,
         download_name=download_name,
     )
-    response.headers["X-Transpose-From"] = from_label
-    response.headers["X-Transpose-To"] = to_label
-    response.headers["X-Transpose-Changes"] = changes_header
+    response.headers["X-Transpose-From"] = quote(from_label)
+    response.headers["X-Transpose-To"] = quote(to_label)
+    response.headers["X-Transpose-Changes"] = quote(changes_header)
     return response
 
 
