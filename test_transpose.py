@@ -320,27 +320,59 @@ class TestTransposeLineText:
 
 
 # ---------------------------------------------------------------------------
-# _pick_styled_run
+# transpose_line_with_owners
 # ---------------------------------------------------------------------------
 
 
-class TestPickStyledRun:
-    def _make_run(self, text):
-        run = MagicMock()
-        run.text = text
-        return run
+class TestTransposeLineWithOwners:
+    def _run(self, text, owners, semitones=2, use_flats=False, german=False):
+        spelling = t.choose_spelling(use_flats, german)
+        return t.transpose_line_with_owners(text, owners, semitones, spelling, german)
 
-    def test_returns_first_non_whitespace_run(self):
-        runs = [self._make_run("  "), self._make_run("Am"), self._make_run("G")]
-        assert t._pick_styled_run(runs) is runs[1]
+    def test_owners_length_matches_text(self):
+        text = "C G Am"
+        owners = [0] * len(text)
+        new_text, new_owners = self._run(text, owners)
+        assert len(new_text) == len(new_owners)
 
-    def test_falls_back_to_first_run_when_all_whitespace(self):
-        runs = [self._make_run("  "), self._make_run("   ")]
-        assert t._pick_styled_run(runs) is runs[0]
+    def test_leading_spaces_keep_owner(self):
+        text = "  C"
+        owners = [0, 0, 1]
+        new_text, new_owners = self._run(text, owners)
+        assert new_text.startswith("  ")
+        assert new_owners[0] == 0
 
-    def test_single_run(self):
-        runs = [self._make_run("C")]
-        assert t._pick_styled_run(runs) is runs[0]
+    def test_root_owner_taken_from_first_char(self):
+        text = "Dm7"
+        owners = [0, 0, 1]
+        new_text, new_owners = self._run(text, owners, semitones=3)
+        assert new_text == "Fm7"
+        assert new_owners[-1] == 1
+
+    def test_slash_bass_transposed(self):
+        text = "G/B"
+        owners = [0, 0, 1]
+        new_text, _ = self._run(text, owners, semitones=2)
+        assert new_text == "A/C#"
+
+    def test_root_growth_absorbs_trailing_space(self):
+        text = "C  G"
+        owners = [0, 0, 0, 0]
+        new_text, new_owners = self._run(text, owners, semitones=1, use_flats=True)
+        assert new_text.startswith("Db")
+        assert len(new_text) == len(new_owners)
+
+    def test_root_shrink_pads_trailing_space(self):
+        text = "C# G"
+        owners = [0, 0, 0, 0]
+        new_text, new_owners = self._run(text, owners, semitones=1, use_flats=False)
+        assert len(new_text) == len(new_owners)
+
+    def test_non_root_token_unchanged(self):
+        text = "3 3"
+        owners = [0, 0, 0]
+        new_text, new_owners = self._run(text, owners)
+        assert len(new_text) == len(new_owners)
 
 
 # ---------------------------------------------------------------------------
@@ -359,25 +391,96 @@ class TestRedistributeToRuns:
         para.runs = [self._make_run(t_) for t_ in texts]
         return para
 
-    def test_concentrates_text_in_styled_run(self):
+    def _redistribute(self, para, semitones=3, use_flats=False, german=False):
+        spelling = t.choose_spelling(use_flats, german)
+        t.redistribute_to_runs(para, semitones, spelling, german)
+
+    def test_transposes_root_in_place(self):
         para = self._make_paragraph(["Am", "  ", "G"])
-        t.redistribute_to_runs(para, "Cm  D")
-        assert para.runs[0].text == "Cm  D"
-        assert para.runs[1].text == ""
-        assert para.runs[2].text == ""
+        self._redistribute(para, semitones=3)
+        assert para.runs[0].text == "Cm"
+        assert para.runs[2].text == "A#"
 
-    def test_empty_runs_skipped(self):
-        para = self._make_paragraph(["", "Am"])
-        t.redistribute_to_runs(para, "Bm")
-        # only non-empty runs are considered; "Am" run gets the text
-        assert para.runs[1].text == "Bm"
+    def test_preserves_superscript_suffix_run(self):
+        para = self._make_paragraph(["Dm", "7"])
+        self._redistribute(para, semitones=3)
+        assert para.runs[0].text == "Fm"
+        assert para.runs[1].text == "7"
 
-    def test_all_empty_runs_does_nothing(self):
+    def test_slash_bass_split_across_runs(self):
+        para = self._make_paragraph(["G/", "B"])
+        self._redistribute(para, semitones=2)
+        assert para.runs[0].text == "A/"
+        assert para.runs[1].text == "C#"
+
+    def test_root_accidental_split_across_runs(self):
+        para = self._make_paragraph(["A", "#"])
+        self._redistribute(para, semitones=1, use_flats=False)
+        assert (para.runs[0].text + para.runs[1].text).strip() == "B"
+
+    def test_no_runs_does_nothing(self):
+        para = MagicMock()
+        para.runs = []
+        self._redistribute(para)
+
+    def test_empty_text_does_nothing(self):
         para = self._make_paragraph(["", ""])
-        t.redistribute_to_runs(para, "D")
-        # no styled run found, nothing written
-        para.runs[0].text = ""
-        para.runs[1].text = ""
+        self._redistribute(para)
+        assert para.runs[0].text == ""
+        assert para.runs[1].text == ""
+
+
+# ---------------------------------------------------------------------------
+# _first_owner
+# ---------------------------------------------------------------------------
+
+
+class TestFirstOwner:
+    def test_returns_first(self):
+        assert t._first_owner([3, 1, 2]) == 3
+
+    def test_defaults_to_zero_when_empty(self):
+        assert t._first_owner([]) == 0
+
+
+# ---------------------------------------------------------------------------
+# superscript formatting preservation (integration)
+# ---------------------------------------------------------------------------
+
+
+class TestSuperscriptPreserved:
+    def _make_superscript_docx(self):
+        document = Document()
+        paragraph = document.add_paragraph()
+        base = paragraph.add_run("Dm")
+        sup = paragraph.add_run("7")
+        sup.font.superscript = True
+        paragraph.add_run("         ")
+        base2 = paragraph.add_run("G")
+        sup2 = paragraph.add_run("sus-3")
+        sup2.font.superscript = True
+        buffer = BytesIO()
+        document.save(buffer)
+        return buffer.getvalue(), base, sup, base2, sup2
+
+    def test_superscript_runs_survive_transposition(self):
+        file_bytes, *_ = self._make_superscript_docx()
+
+        docx_bytes, _, _, changes = t.transpose_document_bytes(file_bytes, "C", "E")
+
+        result = Document(BytesIO(docx_bytes))
+        para = result.paragraphs[0]
+        runs = [r for r in para.runs if r.text]
+
+        assert runs[0].text == "F#m"
+        assert runs[0].font.superscript is None
+        assert runs[1].text == "7"
+        assert runs[1].font.superscript is True
+        assert runs[-2].text == "B"
+        assert runs[-1].text == "sus-3"
+        assert runs[-1].font.superscript is True
+        assert ("Dm7", "F#m7") in changes
+        assert ("Gsus-3", "Bsus-3") in changes
 
 
 # ---------------------------------------------------------------------------

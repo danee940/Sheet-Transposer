@@ -169,23 +169,122 @@ def transpose_line_text(text, semitones, spelling, german, changes):
     return result
 
 
-def redistribute_to_runs(paragraph, new_text):
-    """Write new_text into the paragraph's runs, concentrating text in the styled run."""
-    runs = [run for run in paragraph.runs if run.text != ""]
+def _build_owner_map(runs):
+    """Return the concatenated run text and a list mapping each char to its run index."""
+    text = ""
+    owners = []
+    for run_index, run in enumerate(runs):
+        text += run.text
+        owners.extend(run_index for _ in run.text)
+    return text, owners
+
+
+def _transpose_token_with_owners(chord, owners, semitones, spelling, german):
+    """Transpose a chord and return (new_chord, new_owners) preserving per-char runs.
+
+    Owners for the root and bass note come from the original note's first character,
+    so the surrounding formatting (e.g. superscript suffix runs) is kept intact.
+    """
+    match = ROOT_MATCH_RE.match(chord)
+    if not match:
+        return chord, owners
+
+    root, remainder = match.group(1), match.group(2)
+    root_owner = owners[0]
+    new_root = transpose_note(root, semitones, spelling, german)
+    new_chord = new_root
+    new_owners = [root_owner] * len(new_root)
+    remainder_owners = owners[len(root) :]
+
+    if "/" in remainder:
+        before_slash, bass = remainder.split("/", 1)
+        bass_match = ROOT_MATCH_RE.match(bass)
+        if bass_match:
+            bass_root = bass_match.group(1)
+            split_at = len(before_slash) + 1
+            slash_part = remainder[:split_at]
+            new_chord += slash_part
+            new_owners += remainder_owners[:split_at]
+
+            bass_owner = remainder_owners[split_at]
+            new_bass = transpose_note(bass_root, semitones, spelling, german)
+            new_chord += new_bass
+            new_owners += [bass_owner] * len(new_bass)
+
+            tail = remainder[split_at + len(bass_root) :]
+            new_chord += tail
+            new_owners += remainder_owners[split_at + len(bass_root) :]
+            return new_chord, new_owners
+
+    new_chord += remainder
+    new_owners += remainder_owners
+    return new_chord, new_owners
+
+
+def transpose_line_with_owners(text, owners, semitones, spelling, german):
+    """Transpose a chord line, returning (new_text, new_owners) aligned to source runs."""
+    leading_len = len(text) - len(text.lstrip())
+    result = text[:leading_len]
+    result_owners = list(owners[:leading_len])
+
+    body = text[leading_len:]
+    body_owners = owners[leading_len:]
+
+    cursor = 0
+    for token_match in TOKEN_SPLIT_RE.finditer(body):
+        chord = token_match.group(1)
+        trailing = token_match.group(2)
+        start = token_match.start(1)
+        chord_owners = body_owners[start : start + len(chord)]
+        trailing_owners = body_owners[start + len(chord) : token_match.end(2)]
+
+        new_chord, new_chord_owners = _transpose_token_with_owners(
+            chord, chord_owners, semitones, spelling, german
+        )
+
+        diff = len(new_chord) - len(chord)
+        if diff > 0:
+            drop = min(diff, len(trailing))
+            trailing = trailing[drop:]
+            trailing_owners = trailing_owners[drop:]
+        elif diff < 0:
+            pad_owner = new_chord_owners[-1] if new_chord_owners else _first_owner(body_owners)
+            trailing += " " * (-diff)
+            trailing_owners = list(trailing_owners) + [pad_owner] * (-diff)
+
+        result += new_chord + trailing
+        result_owners += new_chord_owners + list(trailing_owners)
+        cursor = token_match.end(2)
+
+    result += body[cursor:]
+    result_owners += list(body_owners[cursor:])
+    return result, result_owners
+
+
+def _first_owner(owners):
+    """Return the first owner index, defaulting to 0 for empty owner lists."""
+    return owners[0] if owners else 0
+
+
+def redistribute_to_runs(paragraph, semitones, spelling, german):
+    """Transpose chord roots and write text back into runs, preserving formatting."""
+    runs = paragraph.runs
     if not runs:
         return
 
-    styled_run = _pick_styled_run(runs)
-    for run in runs:
-        run.text = new_text if run is styled_run else ""
+    text, owners = _build_owner_map(runs)
+    if not text:
+        return
 
+    new_text, new_owners = transpose_line_with_owners(text, owners, semitones, spelling, german)
 
-def _pick_styled_run(runs):
-    """Return the first run with non-whitespace text, falling back to the first run."""
-    for run in runs:
-        if run.text.strip():
-            return run
-    return runs[0]
+    run_texts = ["" for _ in runs]
+    for char, owner in zip(new_text, new_owners, strict=True):
+        run_texts[owner] += char
+
+    for run, run_text in zip(runs, run_texts, strict=True):
+        if run.text != run_text:
+            run.text = run_text
 
 
 def process_paragraph(paragraph, semitones, use_flats, german, changes):
@@ -194,8 +293,8 @@ def process_paragraph(paragraph, semitones, use_flats, german, changes):
     if not is_chord_line(text):
         return
     spelling = choose_spelling(use_flats, german)
-    new_text = transpose_line_text(text, semitones, spelling, german, changes)
-    redistribute_to_runs(paragraph, new_text)
+    transpose_line_text(text, semitones, spelling, german, changes)
+    redistribute_to_runs(paragraph, semitones, spelling, german)
 
 
 def iter_paragraphs(document):
