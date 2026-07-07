@@ -49,8 +49,7 @@
           <label for="target_key" class="mb-1.5 mt-4 block text-sm text-muted">Desired key</label>
           <select id="target_key" name="target_key" required
             class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
-            {% for key in keys %}&lt;option value="{{ key }}"{% if key == "D" %} selected{% endif %}&gt;{{ key }}
-            </option>{% endfor %}
+            {% for key in keys %}<option value="{{ key }}"{% if key == "D" %} selected{% endif %}>{{ key }}</option>{% endfor %}
           </select>
         </div>
       </div>
@@ -144,7 +143,7 @@
         link.remove();
         URL.revokeObjectURL(url);
 
-        show("ok", `Transposed from ${from} to ${to}.\nChanges: ${changes}`);
+        showTransposeResult(from, to, changes);
       } catch (err) {
         show("error", "Network error. Please try again.");
       } finally {
