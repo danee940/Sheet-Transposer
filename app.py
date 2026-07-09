@@ -66,6 +66,12 @@ def index():
     return render_template("index.html", keys=KEY_OPTIONS)
 
 
+@app.route("/health")
+def health():
+    """Return a lightweight liveness response for container health checks."""
+    return jsonify({"status": "ok"})
+
+
 @app.route("/robots.txt")
 def robots():
     """Serve robots.txt allowing all crawlers and pointing to the sitemap."""
