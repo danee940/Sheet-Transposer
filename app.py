@@ -1,5 +1,6 @@
 """Flask web frontend for transposing chord sheets in .docx format."""
 
+import os
 from io import BytesIO
 from urllib.parse import quote
 
@@ -122,8 +123,9 @@ def transpose():
 
 
 if __name__ == "__main__":
+    debug_enabled = os.environ.get("FLASK_DEBUG") == "1"
     app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=True,
+        host=os.environ.get("FLASK_RUN_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PORT", "5000")),
+        debug=debug_enabled,
     )
