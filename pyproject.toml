@@ -7,7 +7,8 @@ select = ["E", "F", "I", "W", "UP", "B"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=transpose --cov=app --cov-report=term-missing --cov-fail-under=95"
-testpaths = ["test_transpose.py", "test_app.py"]
+testpaths = ["src/test_transpose.py", "src/test_app.py"]
+pythonpath = ["src"]
 
 [tool.coverage.run]
 source = ["transpose", "app"]

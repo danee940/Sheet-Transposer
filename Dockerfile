@@ -8,8 +8,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py transpose.py gunicorn.conf.py ./
-COPY templates ./templates
+COPY src/app.py src/transpose.py src/gunicorn.conf.py ./
+COPY src/templates ./templates
+COPY src/static ./static
 
 RUN useradd --create-home appuser
 USER appuser

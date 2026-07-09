@@ -16,7 +16,7 @@ Open `http://localhost:5000`, upload a `.docx` chord sheet, select the current a
 ### CLI
 
 ```bash
-python transpose.py
+python src/transpose.py
 ```
 
 Processes all `.docx` files in `input/` and saves results to `output/`.

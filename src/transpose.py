@@ -12,8 +12,9 @@ from docx import Document
 DEFAULT_GOTENBERG_URL = "http://localhost:3000"
 PDF_CONVERSION_TIMEOUT_SECONDS = 120
 
-INPUT_DIR = Path(__file__).parent / "input"
-OUTPUT_DIR = Path(__file__).parent / "output"
+PROJECT_ROOT = Path(__file__).parent.parent
+INPUT_DIR = PROJECT_ROOT / "input"
+OUTPUT_DIR = PROJECT_ROOT / "output"
 
 NOTE_TO_SEMITONE = {
     "C": 0,
