@@ -353,8 +353,12 @@ def _transpose_token_with_owners(chord, owners, semitones, spelling, german):
     return new_chord, new_owners
 
 
-def transpose_line_with_owners(text, owners, semitones, spelling, german):
-    """Transpose a chord line, returning (new_text, new_owners) aligned to source runs."""
+def transpose_line_with_owners(text, owners, semitones, spelling, german, changes=None):
+    """Transpose a chord line, returning (new_text, new_owners) aligned to source runs.
+
+    When a ``changes`` set is supplied, every ``(original, transposed)`` chord
+    pair is recorded so callers get the change summary from this single path.
+    """
     leading_len = len(text) - len(text.lstrip())
     result = text[:leading_len]
     result_owners = list(owners[:leading_len])
@@ -376,6 +380,9 @@ def transpose_line_with_owners(text, owners, semitones, spelling, german):
             )
         else:
             new_chord, new_chord_owners = chord, list(chord_owners)
+
+        if changes is not None and new_chord != chord:
+            changes.add((chord, new_chord))
 
         diff = len(new_chord) - len(chord)
         if diff > 0:
@@ -401,7 +408,7 @@ def _first_owner(owners):
     return owners[0] if owners else 0
 
 
-def redistribute_to_runs(paragraph, semitones, spelling, german):
+def redistribute_to_runs(paragraph, semitones, spelling, german, changes=None):
     """Transpose chord roots and write text back into runs, preserving formatting."""
     runs = paragraph.runs
     if not runs:
@@ -411,7 +418,9 @@ def redistribute_to_runs(paragraph, semitones, spelling, german):
     if not text:
         return
 
-    new_text, new_owners = transpose_line_with_owners(text, owners, semitones, spelling, german)
+    new_text, new_owners = transpose_line_with_owners(
+        text, owners, semitones, spelling, german, changes
+    )
 
     run_texts = ["" for _ in runs]
     for char, owner in zip(new_text, new_owners, strict=True):
@@ -428,8 +437,7 @@ def process_paragraph(paragraph, semitones, use_flats, german, changes):
     if not is_chord_line(text):
         return
     spelling = choose_spelling(use_flats, german)
-    transpose_line_text(text, semitones, spelling, german, changes)
-    redistribute_to_runs(paragraph, semitones, spelling, german)
+    redistribute_to_runs(paragraph, semitones, spelling, german, changes)
 
 
 def iter_paragraphs(document):

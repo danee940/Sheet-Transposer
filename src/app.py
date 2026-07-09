@@ -4,7 +4,9 @@ import logging
 import os
 from io import BytesIO
 from urllib.parse import quote
+from zipfile import BadZipFile
 
+from docx.opc.exceptions import PackageNotFoundError
 from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from transpose import (
@@ -20,7 +22,6 @@ SITE_URL = "https://chordtransposer.app"
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 PDF_MIMETYPE = "application/pdf"
-PNG_MIMETYPE = "image/png"
 
 KEY_OPTIONS = [
     "C",
@@ -109,10 +110,7 @@ def robots():
 @app.route("/og-image.png")
 def og_image():
     """Serve the branded social share image used for Open Graph and Twitter cards."""
-    return send_file(
-        os.path.join(app.static_folder, "og-image.png"),
-        mimetype=PNG_MIMETYPE,
-    )
+    return app.send_static_file("og-image.png")
 
 
 @app.route("/sitemap.xml")
@@ -136,7 +134,7 @@ def transpose():
     target_key = (request.form.get("target_key") or "").strip()
     output_format = (request.form.get("format") or "docx").strip().lower()
 
-    if uploaded is None or uploaded.filename == "":
+    if uploaded is None or not uploaded.filename:
         return jsonify({"error": "Please choose a .docx file to upload."}), 400
     if not uploaded.filename.lower().endswith(".docx"):
         return jsonify({"error": "Only .docx files are supported."}), 400
@@ -155,7 +153,7 @@ def transpose():
         )
     except InvalidKeyError as exc:
         return jsonify({"error": str(exc)}), 400
-    except Exception:
+    except (PackageNotFoundError, BadZipFile):
         return jsonify({"error": "Could not read the file as a valid .docx document."}), 400
 
     stem = uploaded.filename.rsplit(".", 1)[0]

@@ -1,4 +1,5 @@
 """Tests for the Flask web layer in app.py."""
+# pylint: disable=redefined-outer-name,missing-function-docstring
 
 from io import BytesIO
 from urllib.parse import unquote
@@ -28,7 +29,7 @@ def _chord_docx_bytes():
     return buffer.getvalue()
 
 
-def _upload(data_bytes, filename="song.docx"):
+def _upload(data_bytes, filename="song.docx") -> dict[str, object]:
     return {"file": (BytesIO(data_bytes), filename)}
 
 
