@@ -54,6 +54,12 @@ pytest
 
 Coverage of `transpose.py` must stay at or above 95%.
 
+## Support
+
+If you find this project useful, you can support its development:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/danee940)
+
 ## License
 
 Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
