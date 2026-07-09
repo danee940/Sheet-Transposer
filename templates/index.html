@@ -54,6 +54,20 @@
         </div>
       </div>
 
+      <span class="mb-1.5 mt-4 block text-sm text-muted">Output format</span>
+      <div class="flex gap-3">
+        <label
+          class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
+          <input type="radio" name="format" value="docx" class="accent-accent" checked />
+          .docx
+        </label>
+        <label
+          class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
+          <input type="radio" name="format" value="pdf" class="accent-accent" />
+          .pdf
+        </label>
+      </div>
+
       <button id="submit" type="submit"
         class="mt-6 w-full rounded-xl bg-accent px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60">
         Transpose &amp; Download
@@ -131,7 +145,8 @@
 
         const disposition = response.headers.get("Content-Disposition") || "";
         const match = disposition.match(/filename="?([^"]+)"?/);
-        const filename = match ? match[1] : "transposed.docx";
+        const selectedFormat = form.querySelector('input[name="format"]:checked')?.value || "docx";
+        const filename = match ? match[1] : `transposed.${selectedFormat}`;
 
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);

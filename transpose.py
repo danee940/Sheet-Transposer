@@ -1,11 +1,16 @@
 """Transpose chord sheets in .docx format between musical keys."""
 
+import os
 import re
 import sys
 from io import BytesIO
 from pathlib import Path
 
+import requests
 from docx import Document
+
+DEFAULT_GOTENBERG_URL = "http://localhost:3000"
+PDF_CONVERSION_TIMEOUT_SECONDS = 120
 
 INPUT_DIR = Path(__file__).parent / "input"
 OUTPUT_DIR = Path(__file__).parent / "output"
@@ -490,6 +495,39 @@ def _save_and_report(document, input_file, from_label, to_label, changes):
 
 class InvalidKeyError(ValueError):
     """Raised when a supplied key string cannot be parsed."""
+
+
+class PdfConversionError(RuntimeError):
+    """Raised when a .docx cannot be converted to PDF."""
+
+
+def _gotenberg_url():
+    """Return the base URL of the Gotenberg conversion service."""
+    return (os.environ.get("GOTENBERG_URL") or DEFAULT_GOTENBERG_URL).rstrip("/")
+
+
+def convert_docx_to_pdf(docx_bytes):
+    """Convert .docx bytes to PDF bytes via the Gotenberg conversion service."""
+    endpoint = f"{_gotenberg_url()}/forms/libreoffice/convert"
+    files = {
+        "files": (
+            "sheet.docx",
+            docx_bytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+    }
+
+    try:
+        response = requests.post(endpoint, files=files, timeout=PDF_CONVERSION_TIMEOUT_SECONDS)
+    except requests.Timeout as exc:
+        raise PdfConversionError("PDF conversion timed out.") from exc
+    except requests.RequestException as exc:
+        raise PdfConversionError("Could not reach the PDF conversion service.") from exc
+
+    if response.status_code != 200:
+        raise PdfConversionError("The PDF conversion service failed to convert the document.")
+
+    return response.content
 
 
 def transpose_document_bytes(file_bytes, current_key, target_key):

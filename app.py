@@ -5,9 +5,17 @@ from urllib.parse import quote
 
 from flask import Flask, jsonify, render_template, request, send_file
 
-from transpose import InvalidKeyError, transpose_document_bytes
+from transpose import (
+    InvalidKeyError,
+    PdfConversionError,
+    convert_docx_to_pdf,
+    transpose_document_bytes,
+)
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+PDF_MIMETYPE = "application/pdf"
 
 KEY_OPTIONS = [
     "C",
@@ -61,6 +69,7 @@ def transpose():
     uploaded = request.files.get("file")
     current_key = (request.form.get("current_key") or "").strip()
     target_key = (request.form.get("target_key") or "").strip()
+    output_format = (request.form.get("format") or "docx").strip().lower()
 
     if uploaded is None or uploaded.filename == "":
         return jsonify({"error": "Please choose a .docx file to upload."}), 400
@@ -68,6 +77,8 @@ def transpose():
         return jsonify({"error": "Only .docx files are supported."}), 400
     if not current_key or not target_key:
         return jsonify({"error": "Both current and desired keys are required."}), 400
+    if output_format not in ("docx", "pdf"):
+        return jsonify({"error": "Unsupported output format."}), 400
 
     file_bytes = uploaded.read()
     if not file_bytes:
@@ -83,13 +94,24 @@ def transpose():
         return jsonify({"error": "Could not read the file as a valid .docx document."}), 400
 
     stem = uploaded.filename.rsplit(".", 1)[0]
-    download_name = f"{stem}_{to_label}.docx"
+
+    if output_format == "pdf":
+        try:
+            output_bytes = convert_docx_to_pdf(docx_bytes)
+        except PdfConversionError as exc:
+            return jsonify({"error": str(exc)}), 503
+        mimetype = PDF_MIMETYPE
+        download_name = f"{stem}_{to_label}.pdf"
+    else:
+        output_bytes = docx_bytes
+        mimetype = DOCX_MIMETYPE
+        download_name = f"{stem}_{to_label}.docx"
 
     changes_header = ", ".join(f"{a}->{b}" for a, b in changes) if changes else "none"
 
     response = send_file(
-        BytesIO(docx_bytes),
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        BytesIO(output_bytes),
+        mimetype=mimetype,
         as_attachment=True,
         download_name=download_name,
     )

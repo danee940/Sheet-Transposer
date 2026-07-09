@@ -4,6 +4,7 @@ from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from docx import Document
 
 import transpose as t
@@ -994,3 +995,53 @@ class TestTransposeLineTextNonChord:
         result = t.transpose_line_text("(Vége: C )", 2, spelling, False, changes)
         assert result == "(Vége: D )"
         assert ("C", "D") in changes
+
+
+# ---------------------------------------------------------------------------
+# convert_docx_to_pdf
+# ---------------------------------------------------------------------------
+
+
+class TestConvertDocxToPdf:
+    def test_returns_pdf_bytes_on_success(self):
+        response = MagicMock(status_code=200, content=b"%PDF-1.7")
+        with patch("transpose.requests.post", return_value=response) as post:
+            result = t.convert_docx_to_pdf(b"docx")
+        assert result == b"%PDF-1.7"
+        endpoint = post.call_args.args[0]
+        assert endpoint.endswith("/forms/libreoffice/convert")
+
+    def test_uses_configured_gotenberg_url(self):
+        response = MagicMock(status_code=200, content=b"%PDF-1.7")
+        with (
+            patch.dict("os.environ", {"GOTENBERG_URL": "http://gotenberg:3000/"}),
+            patch("transpose.requests.post", return_value=response) as post,
+        ):
+            t.convert_docx_to_pdf(b"docx")
+        assert post.call_args.args[0] == "http://gotenberg:3000/forms/libreoffice/convert"
+
+    def test_raises_on_timeout(self):
+        with patch("transpose.requests.post", side_effect=requests.Timeout()):
+            with pytest.raises(t.PdfConversionError, match="timed out"):
+                t.convert_docx_to_pdf(b"docx")
+
+    def test_raises_on_connection_error(self):
+        with patch("transpose.requests.post", side_effect=requests.ConnectionError()):
+            with pytest.raises(t.PdfConversionError, match="reach"):
+                t.convert_docx_to_pdf(b"docx")
+
+    def test_raises_on_non_200_response(self):
+        response = MagicMock(status_code=500, content=b"error")
+        with patch("transpose.requests.post", return_value=response):
+            with pytest.raises(t.PdfConversionError, match="failed"):
+                t.convert_docx_to_pdf(b"docx")
+
+
+class TestGotenbergUrl:
+    def test_defaults_to_localhost(self):
+        with patch.dict("os.environ", {}, clear=True):
+            assert t._gotenberg_url() == "http://localhost:3000"
+
+    def test_reads_env_and_strips_trailing_slash(self):
+        with patch.dict("os.environ", {"GOTENBERG_URL": "http://gotenberg:3000/"}):
+            assert t._gotenberg_url() == "http://gotenberg:3000"

@@ -3,4 +3,14 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      GOTENBERG_URL: http://gotenberg:3000
+    depends_on:
+      - gotenberg
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports:
+      - "3000:3000"
     restart: unless-stopped
