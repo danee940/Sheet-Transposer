@@ -1,4 +1,4 @@
-# Sheet Transposer — Agent Rules
+# Chord Transposer — Agent Rules
 
 Small Flask app that transposes `.docx` chord sheets between musical keys.
 Core logic lives in `transpose.py`; the web layer is `app.py` with a single
