@@ -382,6 +382,26 @@
       message.appendChild(table);
     }
 
+    function parseDownloadFilename(disposition, fallback) {
+      const extendedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (extendedMatch) {
+        try {
+          return decodeURIComponent(extendedMatch[1]);
+        } catch {
+          return fallback;
+        }
+      }
+      const quotedMatch = disposition.match(/filename="([^"]+)"/i);
+      if (quotedMatch) {
+        return quotedMatch[1];
+      }
+      const bareMatch = disposition.match(/filename=([^;]+)/i);
+      if (bareMatch) {
+        return bareMatch[1].trim();
+      }
+      return fallback;
+    }
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       hideMessage();
@@ -402,9 +422,8 @@
         const changes = decodeURIComponent(response.headers.get("X-Transpose-Changes") || "none");
 
         const disposition = response.headers.get("Content-Disposition") || "";
-        const match = disposition.match(/filename="?([^"]+)"?/);
         const selectedFormat = form.querySelector('input[name="format"]:checked')?.value || "docx";
-        const filename = match ? match[1] : `transposed.${selectedFormat}`;
+        const filename = parseDownloadFilename(disposition, `transposed.${selectedFormat}`);
 
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);

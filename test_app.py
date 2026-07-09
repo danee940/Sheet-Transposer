@@ -136,6 +136,16 @@ def test_transpose_docx_success(client):
     assert "C->D" in unquote(response.headers["X-Transpose-Changes"])
 
 
+def test_transpose_preserves_non_ascii_filename(client):
+    data = _upload(_chord_docx_bytes(), filename="Covered-Gizus_rövid_G.docx")
+    data.update({"current_key": "C", "target_key": "D"})
+    response = client.post("/transpose", data=data, content_type="multipart/form-data")
+
+    assert response.status_code == 200
+    disposition = response.headers["Content-Disposition"]
+    assert "filename*=UTF-8''Covered-Gizus_r%C3%B6vid_G_D.docx" in disposition
+
+
 def test_transpose_pdf_success(client, monkeypatch):
     monkeypatch.setattr(app_module, "convert_docx_to_pdf", lambda docx_bytes: b"%PDF-1.4 fake")
 
