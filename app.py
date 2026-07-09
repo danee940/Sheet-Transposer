@@ -4,7 +4,7 @@ import os
 from io import BytesIO
 from urllib.parse import quote
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from transpose import (
     InvalidKeyError,
@@ -14,6 +14,8 @@ from transpose import (
 )
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+SITE_URL = "https://chordtransposer.app"
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 PDF_MIMETYPE = "application/pdf"
@@ -62,6 +64,26 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
 def index():
     """Render the upload page with available key options."""
     return render_template("index.html", keys=KEY_OPTIONS)
+
+
+@app.route("/robots.txt")
+def robots():
+    """Serve robots.txt allowing all crawlers and pointing to the sitemap."""
+    body = f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n"
+    return Response(body, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    """Serve a minimal sitemap listing the single public page."""
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"  <url><loc>{SITE_URL}/</loc><changefreq>monthly</changefreq>"
+        "<priority>1.0</priority></url>\n"
+        "</urlset>\n"
+    )
+    return Response(body, mimetype="application/xml")
 
 
 @app.route("/transpose", methods=["POST"])
