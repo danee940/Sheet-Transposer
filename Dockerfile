@@ -14,6 +14,7 @@ COPY templates ./templates
 RUN useradd --create-home appuser
 USER appuser
 
-EXPOSE 5000
+EXPOSE 8080
 
 CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
+
