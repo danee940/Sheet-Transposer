@@ -2,7 +2,7 @@ services:
   sheet-transposer:
     build: .
     ports:
-      - "5000:5000"
+      - "8080:8080"
     environment:
       GOTENBERG_URL: http://gotenberg:3000
     depends_on:
@@ -11,7 +11,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('PORT', '5000') + '/health')"
+        - python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('PORT', '8080') + '/health')"
       interval: 30s
       timeout: 5s
       retries: 3

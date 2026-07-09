@@ -68,7 +68,7 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
 
 logger.info(
     "app initialised: port=%s gotenberg_url_set=%s",
-    os.environ.get("PORT", "5000"),
+    os.environ.get("PORT", "8080"),
     bool(os.environ.get("GOTENBERG_URL")),
 )
 

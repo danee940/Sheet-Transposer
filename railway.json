@@ -6,6 +6,7 @@
   },
   "deploy": {
     "healthcheckPath": "/health",
+    "healthcheckPort": 8080,
     "healthcheckTimeout": 30,
     "overlapSeconds": 20,
     "drainingSeconds": 30,
