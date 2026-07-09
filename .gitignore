@@ -9,6 +9,7 @@ __pycache__/
 dist/
 build/
 .eggs/
+.env
 
 # Virtual environment
 .venv/
@@ -48,5 +49,4 @@ Thumbs.db
 
 # Kilo
 .kilo/
-
-.env
+.playwright-mcp
