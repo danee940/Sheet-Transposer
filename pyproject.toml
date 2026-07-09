@@ -6,11 +6,11 @@ target-version = "py312"
 select = ["E", "F", "I", "W", "UP", "B"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=transpose --cov-report=term-missing --cov-fail-under=95"
-testpaths = ["test_transpose.py"]
+addopts = "--cov=transpose --cov=app --cov-report=term-missing --cov-fail-under=95"
+testpaths = ["test_transpose.py", "test_app.py"]
 
 [tool.coverage.run]
-source = ["transpose"]
+source = ["transpose", "app"]
 
 [tool.coverage.report]
 exclude_also = ['if __name__ == "__main__":']
