@@ -1,8 +1,8 @@
 # Chord Transposer — Agent Rules
 
 Small Flask app that transposes `.docx` chord sheets between musical keys.
-Core logic lives in `transpose.py`; the web layer is `app.py` with a single
-Tailwind (CDN) template at `templates/index.html`.
+Core logic lives in `src/transpose.py`; the web layer is `src/app.py` with a
+single Tailwind (CDN) template at `src/templates/index.html`.
 
 ## Mandatory: run all Python checks after any change
 
@@ -16,13 +16,14 @@ pytest
 ```
 
 - `pytest` is configured (in `pyproject.toml`) to run with coverage and to
-  fail if coverage of `transpose.py` drops below 95%.
-- `testpaths` includes three test files: `test_transpose.py`, `test_app.py`,
-  and `test_integration.py`. All three must pass. Do not remove any from
-  `testpaths`.
-- `test_integration.py` contains end-to-end integration tests using real
-  `.docx` bytes. When adding new behaviour to `transpose.py` or `app.py`,
-  consider whether a corresponding integration test is needed there.
+  fail if combined coverage of `transpose.py` and `app.py` drops below 95%.
+- `testpaths` includes three test files: `src/test_transpose.py`,
+  `src/test_app.py`, and `src/test_integration.py`. All three must pass. Do
+  not remove any from `testpaths`.
+- `src/test_integration.py` contains end-to-end integration tests using real
+  `.docx` bytes. When adding new behaviour to `src/transpose.py` or
+  `src/app.py`, consider whether a corresponding integration test is needed
+  there.
 - Fix all lint, formatting, test, and coverage failures. Never leave the suite red.
 - If a change lowers coverage, add or update tests to restore it.
 

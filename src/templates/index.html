@@ -104,6 +104,14 @@
           "@type": "Answer",
           "text": "Yes. Choose the PDF output option before transposing and the transposed chord sheet is returned as a ready-to-print PDF. You can also keep it as an editable .docx."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "Are my files stored anywhere?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Your chord sheet is processed to generate the transposed file and is not kept after the download is returned."
+        }
       }
     ]
   }
@@ -166,7 +174,7 @@
     </a>
   </nav>
 
-  <header class="mb-8 flex animate-fade-up flex-col items-center text-center">
+  <header class="mb-8 flex flex-col items-center text-center motion-safe:animate-fade-up">
     <div
       class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-indigo-500 text-3xl text-white shadow-lg shadow-accent/30">
       &#9835;
@@ -181,26 +189,47 @@
   </header>
 
   <main
-    class="w-full max-w-md animate-fade-up rounded-2xl border border-app-border bg-card/80 p-8 shadow-2xl shadow-black/40 backdrop-blur">
+    class="w-full max-w-md rounded-2xl border border-app-border bg-card/80 p-8 shadow-2xl shadow-black/40 backdrop-blur motion-safe:animate-fade-up">
     <h2 class="mb-6 text-lg font-semibold text-slate-100">Transpose a chord sheet</h2>
 
     <form id="form">
-      <label for="file" class="mb-1.5 mt-4 block text-sm text-muted">Chord sheet (.docx)</label>
-      <input id="file" name="file" type="file" accept=".docx" required
-        class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-white hover:file:bg-accent-hover" />
+      <span class="mb-1.5 mt-4 block text-sm text-muted">Chord sheet (.docx)</span>
+      <label id="dropzone" for="file"
+        class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-app-border bg-bg px-4 py-6 text-center transition-colors hover:border-accent focus-within:border-accent focus-within:ring-2 focus-within:ring-accent">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" class="text-muted" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        <span id="dropzone-text" class="text-sm text-muted">
+          <span class="font-medium text-slate-200">Drop your .docx here</span> or click to browse
+        </span>
+        <input id="file" name="file" type="file" accept=".docx" required class="sr-only" />
+      </label>
 
-      <div class="flex gap-3">
+      <div class="mt-4 flex items-end gap-2">
         <div class="flex-1">
-          <label for="current_key" class="mb-1.5 mt-4 block text-sm text-muted">Current key</label>
+          <label for="current_key" class="mb-1.5 block text-sm text-muted">Current key</label>
           <select id="current_key" name="current_key" required
-            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
+            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent">
             {% for key in keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}
           </select>
         </div>
+        <button type="button" id="swap" aria-label="Swap keys" title="Swap keys"
+          class="mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-app-border bg-bg text-muted transition-colors hover:border-accent hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-accent">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="17 1 21 5 17 9" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <polyline points="7 23 3 19 7 15" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          </svg>
+        </button>
         <div class="flex-1">
-          <label for="target_key" class="mb-1.5 mt-4 block text-sm text-muted">Desired key</label>
+          <label for="target_key" class="mb-1.5 block text-sm text-muted">Desired key</label>
           <select id="target_key" name="target_key" required
-            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
+            class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent">
             {% for key in keys %}<option value="{{ key }}" {% if key=="D" %} selected{% endif %}>{{ key }}</option>{%
             endfor %}
           </select>
@@ -210,24 +239,28 @@
       <span class="mb-1.5 mt-4 block text-sm text-muted">Output format</span>
       <div class="flex gap-3">
         <label
-          class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
-          <input type="radio" name="format" value="docx" class="accent-accent" checked />
+          class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent">
+          <input type="radio" name="format" value="docx" class="accent-accent focus:outline-none" checked />
           .docx
         </label>
         <label
-          class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
-          <input type="radio" name="format" value="pdf" class="accent-accent" />
+          class="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent">
+          <input type="radio" name="format" value="pdf" class="accent-accent focus:outline-none" />
           .pdf
         </label>
       </div>
 
       <button id="submit" type="submit"
-        class="mt-6 w-full rounded-xl bg-accent px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60">
-        Transpose &amp; Download
+        class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-card disabled:cursor-not-allowed disabled:opacity-60">
+        <svg id="spinner" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" class="hidden motion-safe:animate-spin" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+        <span id="submit-label">Transpose &amp; Download</span>
       </button>
     </form>
 
-    <div id="message" class="mt-4 hidden rounded-xl px-3.5 py-3 text-sm"></div>
+    <div id="message" class="mt-4 hidden rounded-xl px-3.5 py-3 text-sm" role="status" aria-live="polite"></div>
   </main>
 
   <section class="mt-14 w-full max-w-2xl space-y-6 text-slate-300">
@@ -242,22 +275,30 @@
       <ol class="mt-6 space-y-3">
         <li class="flex items-start gap-3 text-sm leading-relaxed">
           <span
-            class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">1</span>
+            class="flex h-[1.625em] w-6 shrink-0 items-center justify-center text-xs font-semibold text-accent">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15">1</span>
+          </span>
           <span>Upload your chord sheet in .docx format.</span>
         </li>
         <li class="flex items-start gap-3 text-sm leading-relaxed">
           <span
-            class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">2</span>
+            class="flex h-[1.625em] w-6 shrink-0 items-center justify-center text-xs font-semibold text-accent">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15">2</span>
+          </span>
           <span>Select the key the song is currently written in.</span>
         </li>
         <li class="flex items-start gap-3 text-sm leading-relaxed">
           <span
-            class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">3</span>
+            class="flex h-[1.625em] w-6 shrink-0 items-center justify-center text-xs font-semibold text-accent">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15">3</span>
+          </span>
           <span>Select the key you want to play it in.</span>
         </li>
         <li class="flex items-start gap-3 text-sm leading-relaxed">
           <span
-            class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-semibold text-accent">4</span>
+            class="flex h-[1.625em] w-6 shrink-0 items-center justify-center text-xs font-semibold text-accent">
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15">4</span>
+          </span>
           <span>Download the transposed sheet as a .docx or PDF.</span>
         </li>
       </ol>
@@ -268,9 +309,7 @@
       <p class="mt-3 text-sm leading-relaxed">
         Every major and minor key is supported, including both sharp and flat spellings such as
         C#, Db, F#m, and Bbm. Chord qualities like minor, seventh, sus, add, maj7, and slash
-        chords (for example G/B) are recognised and moved correctly. German H notation, where
-        H stands for B and B stands for B-flat, is also detected and transposed accurately, so
-        sheets written in either the English or German system work out of the box.
+        chords (for example G/B) are recognised and moved correctly.
       </p>
     </article>
 
@@ -280,12 +319,47 @@
         <details class="group py-3">
           <summary
             class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-100">
+            How do I transpose a chord sheet to a different key?
+            <span class="ml-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-45">&#43;</span>
+          </summary>
+          <p class="mt-2 text-sm leading-relaxed text-slate-300">
+            Upload your .docx chord sheet, choose the key the song is currently in, pick the key
+            you want it in, and download the transposed file. Every chord is shifted by the same
+            interval so the song sounds identical, just higher or lower.
+          </p>
+        </details>
+        <details class="group py-3">
+          <summary
+            class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-100">
             Does transposing keep my document formatting?
             <span class="ml-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-45">&#43;</span>
           </summary>
           <p class="mt-2 text-sm leading-relaxed text-slate-300">
             Yes. Only the chord names are changed. Fonts, spacing, colours, tables, and the
             overall layout of your .docx are preserved.
+          </p>
+        </details>
+        <details class="group py-3">
+          <summary
+            class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-100">
+            Which chords and keys are supported?
+            <span class="ml-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-45">&#43;</span>
+          </summary>
+          <p class="mt-2 text-sm leading-relaxed text-slate-300">
+            All twelve major and twelve minor keys are supported, including sharp and flat
+            spellings such as C#, Db, F#m, and Bbm. Slash chords, sus, add, maj7, and other chord
+            qualities are recognised and transposed correctly.
+          </p>
+        </details>
+        <details class="group py-3">
+          <summary
+            class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-100">
+            Do you support German H notation?
+            <span class="ml-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-45">&#43;</span>
+          </summary>
+          <p class="mt-2 text-sm leading-relaxed text-slate-300">
+            Yes. German notation where H means B and B means B-flat is detected and transposed
+            correctly, so sheets written in either the English or German system work.
           </p>
         </details>
         <details class="group py-3">
@@ -339,21 +413,97 @@
   <script>
     const form = document.getElementById("form");
     const submit = document.getElementById("submit");
+    const submitLabel = document.getElementById("submit-label");
+    const spinner = document.getElementById("spinner");
     const message = document.getElementById("message");
+    const fileInput = document.getElementById("file");
+    const dropzone = document.getElementById("dropzone");
+    const dropzoneText = document.getElementById("dropzone-text");
+    const currentKey = document.getElementById("current_key");
+    const targetKey = document.getElementById("target_key");
+    const swap = document.getElementById("swap");
 
-    const BASE_CLASSES = "mt-4 rounded-xl px-3.5 py-3 text-sm";
+    const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+    const DEFAULT_DROPZONE_HTML =
+      '<span class="font-medium text-slate-200">Drop your .docx here</span> or click to browse';
+
+    const BASE_CLASSES = "mt-4 rounded-xl px-3.5 py-3 text-sm motion-safe:animate-fade-up";
     const ERROR_CLASSES = "border border-app-error/30 bg-app-error/10 text-app-error";
     const OK_CLASSES = "border border-app-ok/30 bg-app-ok/10 text-app-ok";
 
     function hideMessage() {
       message.className = BASE_CLASSES + " hidden";
-      message.innerHTML = "";
+      message.replaceChildren();
     }
 
     function show(kind, text) {
       message.className = BASE_CLASSES + " " + (kind === "error" ? ERROR_CLASSES : OK_CLASSES);
       message.textContent = text;
     }
+
+    function formatBytes(bytes) {
+      const mb = bytes / (1024 * 1024);
+      return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    }
+
+    function validateFile(file) {
+      if (!file) return "Please choose a .docx file to upload.";
+      if (!file.name.toLowerCase().endsWith(".docx")) return "Only .docx files are supported.";
+      if (file.size === 0) return "The selected file is empty.";
+      if (file.size > MAX_UPLOAD_BYTES) return "File is too large. The maximum size is 10 MB.";
+      return null;
+    }
+
+    function updateDropzone(file) {
+      if (!file) {
+        dropzoneText.innerHTML = DEFAULT_DROPZONE_HTML;
+        return;
+      }
+      dropzoneText.innerHTML =
+        `<span class="font-medium text-slate-200"></span>` +
+        `<span class="block text-xs text-muted"></span>`;
+      dropzoneText.firstChild.textContent = file.name;
+      dropzoneText.lastChild.textContent = formatBytes(file.size);
+    }
+
+    fileInput.addEventListener("change", () => {
+      hideMessage();
+      const file = fileInput.files[0];
+      updateDropzone(file);
+      const error = validateFile(file);
+      if (file && error) {
+        show("error", error);
+        fileInput.value = "";
+        updateDropzone(null);
+      }
+    });
+
+    ["dragenter", "dragover"].forEach((name) =>
+      dropzone.addEventListener(name, (event) => {
+        event.preventDefault();
+        dropzone.classList.add("border-accent", "bg-accent/5");
+      })
+    );
+    ["dragleave", "dragend", "drop"].forEach((name) =>
+      dropzone.addEventListener(name, (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("border-accent", "bg-accent/5");
+      })
+    );
+    dropzone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer?.files?.[0];
+      if (!file) return;
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      fileInput.files = dataTransfer.files;
+      fileInput.dispatchEvent(new Event("change"));
+    });
+
+    swap.addEventListener("click", () => {
+      const from = currentKey.value;
+      currentKey.value = targetKey.value;
+      targetKey.value = from;
+    });
 
     function makeCell(text, className) {
       const cell = document.createElement("td");
@@ -428,11 +578,27 @@
       return fallback;
     }
 
+    function setLoading(loading) {
+      submit.disabled = loading;
+      spinner.classList.toggle("hidden", !loading);
+      submitLabel.textContent = loading ? "Transposing..." : "Transpose & Download";
+    }
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       hideMessage();
-      submit.disabled = true;
-      submit.textContent = "Transposing...";
+
+      const fileError = validateFile(fileInput.files[0]);
+      if (fileError) {
+        show("error", fileError);
+        return;
+      }
+      if (currentKey.value === targetKey.value) {
+        show("error", "Current and desired keys are the same. Pick a different key to transpose.");
+        return;
+      }
+
+      setLoading(true);
 
       try {
         const response = await fetch("/transpose", { method: "POST", body: new FormData(form) });
@@ -465,8 +631,7 @@
       } catch (err) {
         show("error", "Network error. Please try again.");
       } finally {
-        submit.disabled = false;
-        submit.textContent = "Transpose & Download";
+        setLoading(false);
       }
     });
   </script>
