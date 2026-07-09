@@ -90,7 +90,8 @@
           <label for="target_key" class="mb-1.5 mt-4 block text-sm text-muted">Desired key</label>
           <select id="target_key" name="target_key" required
             class="w-full rounded-xl border border-app-border bg-bg px-3 py-2.5 text-sm text-slate-200">
-            {% for key in keys %}<option value="{{ key }}"{% if key == "D" %} selected{% endif %}>{{ key }}</option>{% endfor %}
+            {% for key in keys %}<option value="{{ key }}" {% if key=="D" %} selected{% endif %}>{{ key }}</option>{%
+            endfor %}
           </select>
         </div>
       </div>
@@ -149,8 +150,28 @@
       message.textContent = text;
     }
 
+    function makeCell(text, className) {
+      const cell = document.createElement("td");
+      cell.className = className;
+      cell.textContent = text;
+      return cell;
+    }
+
+    function makeHeaderCell(text, className) {
+      const cell = document.createElement("th");
+      cell.className = className;
+      cell.textContent = text;
+      return cell;
+    }
+
     function showTransposeResult(from, to, changesRaw) {
       message.className = BASE_CLASSES + " " + OK_CLASSES;
+      message.replaceChildren();
+
+      const heading = document.createElement("div");
+      heading.className = "mb-2 font-semibold";
+      heading.textContent = `Transposed from ${from} to ${to}`;
+      message.appendChild(heading);
 
       const pairs = changesRaw
         .split(",")
@@ -158,23 +179,28 @@
         .filter(Boolean)
         .map(s => s.split("->"));
 
-      const rows = pairs.map(([orig, transposed]) => `
-        <tr class="border-t border-app-ok/20">
-          <td class="py-1 pr-4 font-mono">${orig}</td>
-          <td class="py-1 font-mono">${transposed}</td>
-        </tr>`).join("");
+      const table = document.createElement("table");
+      table.className = "w-full border-collapse";
 
-      message.innerHTML = `
-        <div class="mb-2 font-semibold">Transposed from ${from} to ${to}</div>
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="text-left opacity-60">
-              <th class="pb-1 pr-4 font-medium">Before</th>
-              <th class="pb-1 font-medium">After</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      headRow.className = "text-left opacity-60";
+      headRow.appendChild(makeHeaderCell("Before", "pb-1 pr-4 font-medium"));
+      headRow.appendChild(makeHeaderCell("After", "pb-1 font-medium"));
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      for (const [orig, transposed] of pairs) {
+        const row = document.createElement("tr");
+        row.className = "border-t border-app-ok/20";
+        row.appendChild(makeCell(orig, "py-1 pr-4 font-mono"));
+        row.appendChild(makeCell(transposed, "py-1 font-mono"));
+        tbody.appendChild(row);
+      }
+      table.appendChild(tbody);
+
+      message.appendChild(table);
     }
 
     form.addEventListener("submit", async (event) => {
