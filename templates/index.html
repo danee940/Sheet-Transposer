@@ -8,8 +8,6 @@
   <title>Chord Transposer — Transpose .docx Chord Sheets to Any Key Online</title>
   <meta name="description"
     content="Free online chord transposer. Upload a .docx chord sheet, pick the current and target key, and download the transposed version instantly. Keeps formatting and supports German (H) notation." />
-  <meta name="keywords"
-    content="chord transposer, transpose chords, transpose chord sheet, change song key, chord chart transposer, docx chord sheet, transpose to any key" />
   <meta name="author" content="danee940" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://chordtransposer.app/" />
@@ -20,13 +18,21 @@
   <meta property="og:description"
     content="Upload a .docx chord sheet, pick the keys, and download the transposed version instantly. Free, formatting-preserving chord transposer." />
   <meta property="og:url" content="https://chordtransposer.app/" />
+  <meta property="og:image" content="https://chordtransposer.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Chord Transposer — transpose .docx chord sheets to any key" />
 
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Chord Transposer — Transpose .docx Chord Sheets to Any Key" />
   <meta name="twitter:description"
     content="Free online tool to transpose .docx chord sheets to any key while preserving formatting." />
+  <meta name="twitter:image" content="https://chordtransposer.app/og-image.png" />
 
   <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%236366f1'/%3E%3Ctext x='12' y='17' font-family='sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%99%AC%3C/text%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%236366f1'/%3E%3Ctext x='12' y='17' font-family='sans-serif' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%99%AC%3C/text%3E%3C/svg%3E" />
 
   <script type="application/ld+json">
@@ -43,6 +49,63 @@
       "price": "0",
       "priceCurrency": "USD"
     }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I transpose a chord sheet to a different key?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Upload your .docx chord sheet, choose the key the song is currently in, pick the key you want it in, and download the transposed file. Every chord is shifted by the same interval so the song sounds identical, just higher or lower."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does transposing keep my document formatting?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Only the chord names in the text are changed. Fonts, spacing, colours, tables, and the overall layout of the .docx are preserved."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which chords and keys are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "All twelve major and twelve minor keys are supported, including sharp and flat spellings such as C#, Db, F#m, and Bbm. Slash chords, sus, add, maj7, and other chord qualities are recognised and transposed correctly."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you support German H notation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. German notation where H means B and B means B-flat is detected and transposed correctly, so sheets written in either the English or German system work."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is the chord transposer free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, the tool is completely free. There is no sign-up, and you can transpose as many chord sheets as you like."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I download the result as a PDF?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Choose the PDF output option before transposing and the transposed chord sheet is returned as a ready-to-print PDF. You can also keep it as an editable .docx."
+        }
+      }
+    ]
   }
   </script>
 
@@ -67,7 +130,7 @@
   </script>
 </head>
 
-<body class="m-0 min-h-screen bg-bg px-4 py-12 text-slate-200 font-sans flex flex-col justify-center items-center">
+<body class="m-0 min-h-screen bg-bg px-4 py-12 text-slate-200 font-sans flex flex-col items-center">
   <main class="w-full max-w-md rounded-2xl border border-app-border bg-card p-8 shadow-2xl shadow-black/40">
     <h1 class="mb-1 text-2xl font-semibold">Chord Transposer</h1>
     <p class="mb-6 text-sm text-muted">Upload a chord sheet (.docx), pick the keys, and download the transposed version.
@@ -119,7 +182,70 @@
     <div id="message" class="mt-4 hidden rounded-xl px-3.5 py-3 text-sm"></div>
   </main>
 
-  <footer class="mt-6 text-sm text-muted">
+  <section class="mt-10 w-full max-w-2xl space-y-10 text-slate-300">
+    <article>
+      <h2 class="mb-3 text-xl font-semibold text-slate-100">How the chord transposer works</h2>
+      <p class="text-sm leading-relaxed">
+        Transposing a song means shifting every chord by the same interval so it can be played
+        or sung in a more comfortable key without changing the melody. This tool reads the chords
+        in your Word (.docx) chord sheet, moves each one from your current key to the key you
+        choose, and gives you back a file that is identical except for the new chords.
+      </p>
+      <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
+        <li>Upload your chord sheet in .docx format.</li>
+        <li>Select the key the song is currently written in.</li>
+        <li>Select the key you want to play it in.</li>
+        <li>Download the transposed sheet as a .docx or PDF.</li>
+      </ol>
+    </article>
+
+    <article>
+      <h2 class="mb-3 text-xl font-semibold text-slate-100">Supported keys and chord notation</h2>
+      <p class="text-sm leading-relaxed">
+        Every major and minor key is supported, including both sharp and flat spellings such as
+        C#, Db, F#m, and Bbm. Chord qualities like minor, seventh, sus, add, maj7, and slash
+        chords (for example G/B) are recognised and moved correctly. German H notation, where
+        H stands for B and B stands for B-flat, is also detected and transposed accurately, so
+        sheets written in either the English or German system work out of the box.
+      </p>
+    </article>
+
+    <article>
+      <h2 class="mb-4 text-xl font-semibold text-slate-100">Frequently asked questions</h2>
+      <div class="space-y-5 text-sm leading-relaxed">
+        <div>
+          <h3 class="font-semibold text-slate-100">Does transposing keep my document formatting?</h3>
+          <p class="mt-1">
+            Yes. Only the chord names are changed. Fonts, spacing, colours, tables, and the
+            overall layout of your .docx are preserved.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-100">Is the chord transposer free?</h3>
+          <p class="mt-1">
+            Yes, it is completely free with no sign-up. You can transpose as many chord sheets
+            as you like.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-100">Can I download the result as a PDF?</h3>
+          <p class="mt-1">
+            Yes. Choose the PDF output option before transposing to get a ready-to-print PDF,
+            or keep the editable .docx version.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-100">Are my files stored anywhere?</h3>
+          <p class="mt-1">
+            No. Your chord sheet is processed to generate the transposed file and is not kept
+            after the download is returned.
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="mt-10 text-sm text-muted">
     <a href="https://github.com/danee940/Chord-Transposer" target="_blank" rel="noopener noreferrer"
       class="inline-flex items-center gap-2 transition-colors hover:text-slate-200">
       <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">

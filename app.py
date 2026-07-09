@@ -20,6 +20,7 @@ SITE_URL = "https://chordtransposer.app"
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 PDF_MIMETYPE = "application/pdf"
+PNG_MIMETYPE = "image/png"
 
 KEY_OPTIONS = [
     "C",
@@ -103,6 +104,15 @@ def robots():
     """Serve robots.txt allowing all crawlers and pointing to the sitemap."""
     body = f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n"
     return Response(body, mimetype="text/plain")
+
+
+@app.route("/og-image.png")
+def og_image():
+    """Serve the branded social share image used for Open Graph and Twitter cards."""
+    return send_file(
+        os.path.join(app.static_folder, "og-image.png"),
+        mimetype=PNG_MIMETYPE,
+    )
 
 
 @app.route("/sitemap.xml")

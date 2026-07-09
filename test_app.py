@@ -51,6 +51,13 @@ def test_robots_txt(client):
     assert "Sitemap:" in response.get_data(as_text=True)
 
 
+def test_og_image_png(client):
+    response = client.get("/og-image.png")
+    assert response.status_code == 200
+    assert response.mimetype == "image/png"
+    assert response.get_data().startswith(b"\x89PNG")
+
+
 def test_sitemap_xml(client):
     response = client.get("/sitemap.xml")
     assert response.status_code == 200
