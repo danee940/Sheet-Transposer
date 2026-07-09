@@ -1,4 +1,4 @@
-# Sheet Transposer
+# Chord Transposer
 
 Web app for transposing `.docx` chord sheets between musical keys. Preserves document formatting and supports both standard and German (H-notation) chord notation.
 
@@ -37,3 +37,10 @@ pytest
 ```
 
 Coverage of `transpose.py` must stay at or above 95%.
+
+## License
+
+Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+See [LICENSE](LICENSE) for the full text.
+
+Copyright (C) 2026 Aierizer Dániel
