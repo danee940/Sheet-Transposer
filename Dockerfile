@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py transpose.py ./
+COPY app.py transpose.py gunicorn.conf.py ./
 COPY templates ./templates
 
 RUN useradd --create-home appuser
@@ -16,4 +16,4 @@ USER appuser
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 4 --timeout 150 app:app"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]

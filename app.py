@@ -1,5 +1,6 @@
 """Flask web frontend for transposing chord sheets in .docx format."""
 
+import logging
 import os
 from io import BytesIO
 from urllib.parse import quote
@@ -56,8 +57,33 @@ KEY_OPTIONS = [
     "Bm",
 ]
 
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO"),
+    format="[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("chordtransposer")
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
+
+logger.info(
+    "app initialised: port=%s gotenberg_url_set=%s",
+    os.environ.get("PORT", "5000"),
+    bool(os.environ.get("GOTENBERG_URL")),
+)
+
+
+@app.before_request
+def log_request_start():
+    """Log the method, path and client for every incoming request."""
+    logger.info("--> %s %s from %s", request.method, request.path, request.remote_addr)
+
+
+@app.after_request
+def log_request_end(response):
+    """Log the status code returned for every request."""
+    logger.info("<-- %s %s %s", request.method, request.path, response.status_code)
+    return response
 
 
 @app.route("/")
