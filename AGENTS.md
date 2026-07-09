@@ -23,5 +23,4 @@ pytest
 ## Conventions
 
 - Do not add explanatory code comments; use self-explanatory names instead.
-- Keep the app dependency-light and pure-Python (no Node build pipeline).
 - Install dev tooling with `pip install -r requirements-dev.txt`.
