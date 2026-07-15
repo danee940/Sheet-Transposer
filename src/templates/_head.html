@@ -1,0 +1,161 @@
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Chord Transposer — Transpose Chords Online, Free & Instant</title>
+  <meta name="description"
+    content="Free online chord transposer. Paste your chords, pick the current and target key, and see them transposed instantly — no upload needed. Also transposes .docx chord sheets while keeping formatting, and supports German (H) notation." />
+  <meta name="author" content="danee940" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://chordtransposer.app/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Chord Transposer" />
+  <meta property="og:title" content="Chord Transposer — Transpose Chords Online, Free & Instant" />
+  <meta property="og:description"
+    content="Paste your chords, pick the keys, and see them transposed instantly. Also transposes .docx chord sheets. Free, formatting-preserving chord transposer." />
+  <meta property="og:url" content="https://chordtransposer.app/" />
+  <meta property="og:image" content="https://chordtransposer.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Chord Transposer — transpose .docx chord sheets to any key" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Chord Transposer — Transpose Chords Online, Free & Instant" />
+  <meta name="twitter:description"
+    content="Free online tool to transpose chords to any key instantly. Paste chords or upload a .docx chord sheet." />
+  <meta name="twitter:image" content="https://chordtransposer.app/og-image.png" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Chord Transposer",
+    "url": "https://chordtransposer.app/",
+    "description": "Free online tool to transpose chords between musical keys. Paste chords for an instant preview, or upload a .docx chord sheet to download it transposed with formatting preserved. Supports standard and German (H) chord notation.",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I transpose chords to a different key?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Paste your chords into the box, choose the key the song is currently in, and pick the key you want it in. The transposed chords appear instantly, with no upload or download needed. Every chord is shifted by the same interval so the song sounds identical, just higher or lower."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I transpose chords without uploading a file?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Use the paste-chords mode to type or paste chords directly and see the transposed result instantly in your browser. Uploading a .docx file is optional and only needed when you want to download a transposed Word or PDF document."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does transposing keep my document formatting?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Only the chord names in the text are changed. Fonts, spacing, colours, tables, and the overall layout of the .docx are preserved."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which chords and keys are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "All twelve major and twelve minor keys are supported, including sharp and flat spellings such as C#, Db, F#m, and Bbm. Slash chords, sus, add, maj7, and other chord qualities are recognised and transposed correctly."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you support German H notation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. German notation where H means B and B means B-flat is detected and transposed correctly, so sheets written in either the English or German system work."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is the chord transposer free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, the tool is completely free. There is no sign-up, and you can transpose as many chord sheets as you like."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I download the result as a PDF?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Choose the PDF output option before transposing and the transposed chord sheet is returned as a ready-to-print PDF. You can also keep it as an editable .docx."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are my files stored anywhere?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Your chord sheet is processed to generate the transposed file and is not kept after the download is returned."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "media",
+      theme: {
+        extend: {
+          colors: {
+            bg: "#0f172a",
+            card: "#1e293b",
+            accent: "#6366f1",
+            "accent-hover": "#4f46e5",
+            muted: "#94a3b8",
+            "app-border": "#334155",
+            "app-error": "#f87171",
+            "app-ok": "#34d399",
+            "bg-light": "#f1f5f9",
+            "card-light": "#ffffff",
+            "muted-light": "#64748b",
+            "app-border-light": "#e2e8f0",
+          },
+          keyframes: {
+            "fade-up": {
+              "0%": { opacity: "0", transform: "translateY(12px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" },
+            },
+          },
+          animation: {
+            "fade-up": "fade-up 0.5s ease-out both",
+          },
+        },
+      },
+    };
+  </script>
+</head>
