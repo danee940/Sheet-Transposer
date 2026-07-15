@@ -1,43 +1,15 @@
+import { capoOptions } from "./capo-suggest.js";
 import { makeCell, makeHeaderCell } from "./dom.js";
 
 export function initCapo() {
   const capoKey = document.getElementById("capo-key");
   const capoTableOutput = document.getElementById("capo-table-output");
 
-  const CAPO_NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-  const CAPO_FRIENDLY_SHAPES = [
-    { semitone: 0, major: "C", minor: "Am" },
-    { semitone: 2, major: "D", minor: "Bm" },
-    { semitone: 4, major: "E", minor: "C#m" },
-    { semitone: 5, major: "F", minor: "Dm" },
-    { semitone: 7, major: "G", minor: "Em" },
-    { semitone: 9, major: "A", minor: "F#m" },
-  ];
-  const MAX_CAPO_FRET = 7;
-
-  function keyToCapoSemitone(key) {
-    const cleaned = key.replace(/m$/, "");
-    return CAPO_NOTE_NAMES.reduce((acc, name, index) => {
-      if (acc !== null) return acc;
-      const sharpName = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][index];
-      return name === cleaned || sharpName === cleaned ? index : null;
-    }, null);
-  }
-
   function renderCapoTable() {
     const key = capoKey.value;
-    const isMinor = key.endsWith("m");
-    const tonic = keyToCapoSemitone(key);
     capoTableOutput.replaceChildren();
-    if (tonic === null) return;
-
-    const rows = [];
-    for (const shape of CAPO_FRIENDLY_SHAPES) {
-      const fret = (tonic - shape.semitone + 12) % 12;
-      if (fret > MAX_CAPO_FRET) continue;
-      rows.push({ fret, shape: isMinor ? shape.minor : shape.major });
-    }
-    rows.sort((a, b) => a.fret - b.fret);
+    const rows = capoOptions(key);
+    if (rows.length === 0) return;
 
     const table = document.createElement("table");
     table.className = "w-full border-collapse";

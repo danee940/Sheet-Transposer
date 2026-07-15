@@ -1,4 +1,7 @@
+import { formatCapoSuggestion } from "./capo-suggest.js";
 import { MODE_ACTIVE_CLASSES, MODE_INACTIVE_CLASSES } from "./dom.js";
+import { loadPrefs, savePrefs } from "./prefs.js";
+import { createStageView } from "./stage.js";
 import {
   chordProToPlain,
   InvalidKeyError,
@@ -50,6 +53,11 @@ export function initPaste() {
   const semitoneQuick = document.querySelectorAll(".semitone-quick");
   const notationSharp = document.getElementById("notation_sharp");
   const notationFlat = document.getElementById("notation_flat");
+  const textInstrument = document.getElementById("text_instrument");
+  const textStage = document.getElementById("text_stage");
+  const capoSuggestion = document.getElementById("capo-suggestion");
+
+  const stageView = createStageView();
 
   const panelPaste = document.getElementById("panel-paste");
   const MAX_SEMITONES = parseInt(panelPaste.dataset.maxSemitones, 10);
@@ -65,10 +73,34 @@ export function initPaste() {
   let semitones = 0;
   let useFlats = false;
   let outputFormat = "chordpro";
+  let instrument = "guitar";
   let transposeTimer = null;
+
+  function persistPrefs() {
+    savePrefs({
+      mode: transposeMode,
+      currentKey: textCurrentKey.value,
+      targetKey: textTargetKey.value,
+      semitones,
+      notation: useFlats ? "flat" : "sharp",
+      instrument,
+    });
+  }
 
   function setTextStatus(text) {
     textStatus.textContent = text;
+  }
+
+  function updateCapoSuggestion() {
+    const showCapo = transposeMode === "key" && instrument === "guitar";
+    const message = showCapo ? formatCapoSuggestion(textTargetKey.value) : null;
+    if (message && textOutput.textContent.trim()) {
+      capoSuggestion.textContent = message;
+      capoSuggestion.classList.remove("hidden");
+    } else {
+      capoSuggestion.textContent = "";
+      capoSuggestion.classList.add("hidden");
+    }
   }
 
   function updateLineCount() {
@@ -104,6 +136,7 @@ export function initPaste() {
       chordproFormatToggle.classList.add("hidden");
     }
     runTextTranspose();
+    persistPrefs();
   }
 
   function updateSemitoneDisplay() {
@@ -114,6 +147,7 @@ export function initPaste() {
     semitones = Math.max(-MAX_SEMITONES, Math.min(MAX_SEMITONES, value));
     updateSemitoneDisplay();
     runTextTranspose();
+    persistPrefs();
   }
 
   function selectNotation(flat) {
@@ -125,6 +159,7 @@ export function initPaste() {
     notationSharp.classList.add(...(flat ? MODE_INACTIVE_CLASSES : MODE_ACTIVE_CLASSES));
     notationFlat.classList.add(...(flat ? MODE_ACTIVE_CLASSES : MODE_INACTIVE_CLASSES));
     runTextTranspose();
+    persistPrefs();
   }
 
   function selectOutputFormat(plain) {
@@ -189,6 +224,11 @@ export function initPaste() {
       : `${label} · no chords found to change`;
   }
 
+  function syncOutputControls() {
+    textStage.disabled = !textOutput.textContent.trim();
+    updateCapoSuggestion();
+  }
+
   function runTextTranspose() {
     const text = textInput.value;
     if (!text.trim()) {
@@ -196,16 +236,19 @@ export function initPaste() {
       textCopy.disabled = true;
       setTextStatus("");
       chordproFormatToggle.classList.add("hidden");
+      syncOutputControls();
       return;
     }
     if (transposeMode === "key" && textCurrentKey.value === textTargetKey.value) {
       setTextStatus("Pick two different keys to transpose.");
+      syncOutputControls();
       return;
     }
     if (transposeMode === "semitone" && semitones === 0) {
       textOutput.textContent = text;
       textCopy.disabled = !text;
       setTextStatus("No shift · pick a semitone offset to transpose.");
+      syncOutputControls();
       return;
     }
 
@@ -224,6 +267,7 @@ export function initPaste() {
         setTextStatus("Something went wrong.");
       }
     }
+    syncOutputControls();
   }
 
   function scheduleTextTranspose() {
@@ -235,14 +279,32 @@ export function initPaste() {
     updateLineCount();
     scheduleTextTranspose();
   });
-  textCurrentKey.addEventListener("change", runTextTranspose);
-  textTargetKey.addEventListener("change", runTextTranspose);
+  textCurrentKey.addEventListener("change", () => {
+    runTextTranspose();
+    persistPrefs();
+  });
+  textTargetKey.addEventListener("change", () => {
+    runTextTranspose();
+    persistPrefs();
+  });
 
   textSwap.addEventListener("click", () => {
     const from = textCurrentKey.value;
     textCurrentKey.value = textTargetKey.value;
     textTargetKey.value = from;
     runTextTranspose();
+    persistPrefs();
+  });
+
+  textInstrument.addEventListener("change", () => {
+    instrument = textInstrument.value;
+    updateCapoSuggestion();
+    persistPrefs();
+  });
+
+  textStage.addEventListener("click", () => {
+    if (!textOutput.textContent.trim()) return;
+    stageView.open(textOutput.textContent);
   });
 
   textSample.addEventListener("click", () => {
@@ -287,10 +349,19 @@ export function initPaste() {
     }
   });
 
+  const savedPrefs = loadPrefs();
+  if (savedPrefs.currentKey) textCurrentKey.value = savedPrefs.currentKey;
+  if (savedPrefs.targetKey) textTargetKey.value = savedPrefs.targetKey;
+  if (savedPrefs.instrument) instrument = savedPrefs.instrument;
+  textInstrument.value = instrument;
+  if (typeof savedPrefs.semitones === "number") {
+    semitones = Math.max(-MAX_SEMITONES, Math.min(MAX_SEMITONES, savedPrefs.semitones));
+  }
+
   selectOutputFormat(false);
-  selectMode("key");
-  selectNotation(false);
+  selectNotation(savedPrefs.notation === "flat");
   updateSemitoneDisplay();
+  selectMode(["key", "semitone", "nashville"].includes(savedPrefs.mode) ? savedPrefs.mode : "key");
   updateLineCount();
 
   textCopy.addEventListener("click", async () => {

@@ -87,8 +87,19 @@
     </p>
   </div>
 
-  <div class="mt-5 space-y-4">
-    <div>
+  <div id="chordpro-format-toggle" class="mt-5 hidden">
+    <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Output format</span>
+    <div class="inline-flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+      role="group" aria-label="ChordPro output format">
+      <button type="button" id="format_chordpro" aria-pressed="true"
+        class="rounded-md px-3 py-1.5 text-sm transition-colors">Keep ChordPro</button>
+      <button type="button" id="format_plain" aria-pressed="false"
+        class="rounded-md px-3 py-1.5 text-sm transition-colors">Plain chords</button>
+    </div>
+  </div>
+
+  <div class="mt-5 grid gap-4 lg:grid-cols-2">
+    <div class="flex flex-col">
       <div class="mb-1.5 flex items-center justify-between gap-3">
         <label for="text_input" class="block text-sm text-muted-light dark:text-muted">Your chords</label>
         <div class="flex items-center gap-3">
@@ -103,31 +114,40 @@
           </button>
         </div>
       </div>
-      <textarea id="text_input" rows="12" spellcheck="false" placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
-        class="w-full resize-y rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200"></textarea>
+      <textarea id="text_input" data-sync-scroll rows="12" spellcheck="false" placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
+        class="h-64 w-full resize-y rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200 lg:h-80"></textarea>
     </div>
-    <div id="chordpro-format-toggle" class="hidden">
-      <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Output format</span>
-      <div class="inline-flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
-        role="group" aria-label="ChordPro output format">
-        <button type="button" id="format_chordpro" aria-pressed="true"
-          class="rounded-md px-3 py-1.5 text-sm transition-colors">Keep ChordPro</button>
-        <button type="button" id="format_plain" aria-pressed="false"
-          class="rounded-md px-3 py-1.5 text-sm transition-colors">Plain chords</button>
+
+    <div class="flex flex-col">
+      <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm text-muted-light dark:text-muted">Transposed</span>
+        <label for="text_instrument" class="flex items-center gap-1.5 text-xs text-muted-light dark:text-muted">
+          Instrument
+          <select id="text_instrument"
+            class="rounded-lg border border-app-border-light bg-bg-light px-2 py-1 text-xs text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
+            <option value="guitar">Guitar</option>
+            <option value="ukulele">Ukulele</option>
+            <option value="piano">Piano</option>
+          </select>
+        </label>
       </div>
-    </div>
-    <div>
-      <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Transposed</span>
-      <pre id="text_output" aria-live="polite"
-        class="min-h-[10rem] overflow-auto whitespace-pre rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 dark:border-app-border dark:bg-bg dark:text-slate-200"></pre>
+      <pre id="text_output" data-sync-scroll aria-live="polite"
+        class="h-64 overflow-auto whitespace-pre rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 dark:border-app-border dark:bg-bg dark:text-slate-200 lg:h-80"></pre>
+      <p id="capo-suggestion" class="mt-2 hidden rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-slate-700 dark:text-slate-200"></p>
     </div>
   </div>
 
-  <div class="mt-3 flex items-center justify-between gap-3">
+  <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
     <p id="text_status" class="text-xs text-muted-light dark:text-muted" role="status" aria-live="polite"></p>
-    <button type="button" id="text_copy" disabled
-      class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
-      Copy
-    </button>
+    <div class="flex items-center gap-2">
+      <button type="button" id="text_stage" disabled
+        class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
+        Stage view
+      </button>
+      <button type="button" id="text_copy" disabled
+        class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
+        Copy
+      </button>
+    </div>
   </div>
 </section>
