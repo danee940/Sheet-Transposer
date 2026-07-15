@@ -1,17 +1,23 @@
-<section class="mt-14 w-full max-w-2xl rounded-2xl border border-app-border-light bg-card-light/60 p-6 backdrop-blur dark:border-app-border dark:bg-card/60 sm:p-8">
+<section
+  class="mt-14 w-full max-w-2xl rounded-2xl border border-app-border-light bg-card-light/60 p-6 backdrop-blur dark:border-app-border dark:bg-card/60 sm:p-8">
   <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Explore more transposers</h2>
-  <div class="mt-5 grid gap-6 sm:grid-cols-3">
-    {% for group in nav_sections %}
-    <div>
-      <h3 class="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ group.heading }}</h3>
-      <ul class="space-y-1.5">
-        {% for link in group.links %}
-        <li>
-          <a href="{{ link.path }}"
-            class="text-sm text-slate-600 transition-colors hover:text-accent dark:text-slate-300{% if link.path == current_path %} font-semibold text-accent dark:text-accent{% endif %}">{{ link.name }}</a>
-        </li>
-        {% endfor %}
-      </ul>
+  <div class="mt-5 grid gap-x-6 gap-y-6 sm:grid-cols-2">
+    {% for column in nav_columns %}
+    <div class="space-y-6">
+      {% for group in column %}
+      <div>
+        <h3 class="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ group.heading }}</h3>
+        <ul class="space-y-1.5">
+          {% for link in group.links %}
+          <li>
+            <a href="{{ link.path }}"
+              class="text-sm text-slate-600 transition-colors hover:text-accent dark:text-slate-300{% if link.path == current_path %} font-semibold text-accent dark:text-accent{% endif %}">{{
+              link.name }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
     </div>
     {% endfor %}
   </div>

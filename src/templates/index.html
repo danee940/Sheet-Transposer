@@ -6,7 +6,8 @@
 <body
   class="relative m-0 min-h-screen overflow-x-hidden bg-bg-light px-4 py-12 text-slate-800 font-sans flex flex-col items-center dark:bg-bg dark:text-slate-200">
   <div aria-hidden="true"
-    class="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] dark:bg-[linear-gradient(180deg,#1e293b_0%,#0f172a_100%)]"></div>
+    class="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] dark:bg-[linear-gradient(180deg,#1e293b_0%,#0f172a_100%)]">
+  </div>
 
   <nav class="fixed right-4 top-4 z-20 flex items-center gap-2">
     <a href="https://github.com/danee940/Chord-Transposer" target="_blank" rel="noopener noreferrer"
@@ -34,7 +35,7 @@
       Chord Transposer
     </h1>
     <p class="mt-2 max-w-md text-sm text-muted-light dark:text-muted">
-      Paste chords to transpose them instantly, or upload a .docx chord sheet — your formatting stays intact.
+      Paste chords to transpose them instantly, or upload a chord sheet file — your formatting stays intact.
     </p>
     <div
       class="mt-4 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-slate-700 dark:border-accent/40 dark:text-slate-200">
@@ -49,7 +50,8 @@
 
   <main
     class="w-full max-w-4xl rounded-2xl border border-app-border-light bg-card-light/80 p-8 shadow-2xl shadow-slate-300/40 backdrop-blur dark:border-app-border dark:bg-card/80 dark:shadow-black/40 motion-safe:animate-fade-up">
-    <div class="mb-6 flex gap-1 rounded-xl border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+    <div
+      class="mb-6 flex gap-1 rounded-xl border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
       role="tablist" aria-label="Transpose mode">
       <button type="button" id="tab-paste" role="tab" aria-selected="true" aria-controls="panel-paste"
         class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
@@ -57,7 +59,7 @@
       </button>
       <button type="button" id="tab-upload" role="tab" aria-selected="false" aria-controls="panel-upload"
         class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
-        Upload .docx
+        Upload a file
       </button>
     </div>
 
@@ -69,14 +71,16 @@
 
   {% include "_linkhub.html" %}
 
-  <footer class="mt-12 border-t border-app-border-light/60 pt-6 text-center text-sm text-muted-light dark:border-app-border/60 dark:text-muted">
+  <footer
+    class="mt-12 border-t border-app-border-light/60 pt-6 text-center text-sm text-muted-light dark:border-app-border/60 dark:text-muted">
     <p>
       Free chord transposer.
       <a href="https://github.com/danee940/Chord-Transposer" target="_blank" rel="noopener noreferrer"
         class="text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">GitHub</a>
       &middot;
       <a href="https://buymeacoffee.com/danee940" target="_blank" rel="noopener noreferrer"
-        class="text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">Buy me a coffee</a>
+        class="text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100">Buy
+        me a coffee</a>
     </p>
   </footer>
 

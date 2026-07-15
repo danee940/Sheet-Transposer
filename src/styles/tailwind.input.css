@@ -34,6 +34,7 @@ summary::-webkit-details-marker {
   .chord-token {
     color: #a5b4fc;
   }
+
   .chord-token:hover {
     color: #c7d2fe;
   }
@@ -48,20 +49,22 @@ summary::-webkit-details-marker {
   --diagram-white: #ffffff;
   --diagram-black: #334155;
   --diagram-active: #6366f1;
-  --diagram-root: #4f46e5;
+  --diagram-root: #f59e0b;
   --diagram-line: #94a3b8;
 }
 
 @media (prefers-color-scheme: dark) {
+
   .diagram-fretboard,
   .diagram-keyboard {
     color: #cbd5e1;
   }
+
   .diagram-keyboard {
     --diagram-white: #e2e8f0;
     --diagram-black: #0f172a;
     --diagram-active: #6366f1;
-    --diagram-root: #818cf8;
+    --diagram-root: #fbbf24;
     --diagram-line: #64748b;
   }
 }
