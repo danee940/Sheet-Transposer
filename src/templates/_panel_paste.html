@@ -1,11 +1,14 @@
-<section id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" data-max-semitones="{{ max_semitones }}"
-  {% if preselect_from is defined %}data-preselect-from="{{ preselect_from }}"{% endif %}{% if preselect_to is defined %} data-preselect-to="{{ preselect_to }}"{% endif %}>
+<section id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" data-max-semitones="{{ max_semitones }}" {% if
+  preselect_from is defined %}data-preselect-from="{{ preselect_from }}" {% endif %}{% if preselect_to is defined %}
+  data-preselect-to="{{ preselect_to }}" {% endif %}{% if preselect_instrument %}
+  data-instrument="{{ preselect_instrument }}" {% endif %}>
   <h2 class="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">Transpose chords online</h2>
   <p class="mb-5 text-sm text-muted-light dark:text-muted">
     Paste your chords and see them transposed instantly — no upload, no download.
   </p>
 
-  <div class="mb-4 flex gap-1 rounded-xl border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+  <div
+    class="mb-4 flex gap-1 rounded-xl border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
     role="tablist" aria-label="Transpose method">
     <button type="button" id="mode-key" role="tab" aria-selected="true" aria-controls="controls-key"
       class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
@@ -26,7 +29,8 @@
       <label for="text_current_key" class="mb-1.5 block text-sm text-muted-light dark:text-muted">Current key</label>
       <select id="text_current_key"
         class="w-full rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 text-sm text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
-        {% for key in keys %}<option value="{{ key }}" {% if preselect_from and key == preselect_from %}selected{% endif %}>{{ key }}</option>{% endfor %}
+        {% for key in keys %}<option value="{{ key }}" {% if preselect_from and key==preselect_from %}selected{% endif
+          %}>{{ key }}</option>{% endfor %}
       </select>
     </div>
     <button type="button" id="text_swap" aria-label="Swap keys" title="Swap keys"
@@ -43,13 +47,14 @@
       <label for="text_target_key" class="mb-1.5 block text-sm text-muted-light dark:text-muted">Desired key</label>
       <select id="text_target_key"
         class="w-full rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 text-sm text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
-        {% for key in keys %}<option value="{{ key }}" {% if key == (preselect_to | default('D')) %} selected{% endif %}>{{ key }}</option>{% endfor %}
+        {% for key in keys %}<option value="{{ key }}" {% if key==(preselect_to | default('D')) %} selected{% endif %}>
+          {{ key }}</option>{% endfor %}
       </select>
     </div>
   </div>
 
   <div id="controls-semitone" role="tabpanel" aria-labelledby="mode-semitone" class="hidden">
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center justify-center gap-3">
       <div class="flex items-center gap-2">
         <button type="button" id="semitone_down" aria-label="Lower by a semitone" title="Lower by a semitone"
           class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-app-border-light bg-bg-light text-lg text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
@@ -74,7 +79,8 @@
         {% endfor %}
       </div>
 
-      <div class="flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+      <div
+        class="flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
         role="group" aria-label="Accidental notation">
         <button type="button" id="notation_sharp" aria-pressed="true"
           class="rounded-md px-3 py-1.5 text-sm transition-colors">&sharp; Sharp</button>
@@ -90,7 +96,8 @@
 
   <div id="chordpro-format-toggle" class="mt-5 hidden">
     <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Output format</span>
-    <div class="inline-flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+    <div
+      class="inline-flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
       role="group" aria-label="ChordPro output format">
       <button type="button" id="format_chordpro" aria-pressed="true"
         class="rounded-md px-3 py-1.5 text-sm transition-colors">Keep ChordPro</button>
@@ -115,13 +122,17 @@
           </button>
         </div>
       </div>
-      <textarea id="text_input" data-sync-scroll rows="12" spellcheck="false" placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
+      <textarea id="text_input" data-sync-scroll rows="12" spellcheck="false"
+        placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
         class="h-64 w-full resize-y rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200 lg:h-80"></textarea>
     </div>
 
     <div class="flex flex-col">
       <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-        <span class="text-sm text-muted-light dark:text-muted">Transposed</span>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-muted-light dark:text-muted">Transposed</span>
+          <p id="text_status" class="text-xs text-muted-light dark:text-muted" role="status" aria-live="polite"></p>
+        </div>
         <label for="text_instrument" class="flex items-center gap-1.5 text-xs text-muted-light dark:text-muted">
           Instrument
           <select id="text_instrument"
@@ -135,22 +146,33 @@
       <pre id="text_output" data-sync-scroll aria-live="polite"
         class="h-64 overflow-auto whitespace-pre rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 dark:border-app-border dark:bg-bg dark:text-slate-200 lg:h-80"></pre>
       <p class="mt-1.5 text-xs text-muted-light dark:text-muted">Tip: click any chord to see its fingering.</p>
-      <p id="capo-suggestion" class="mt-2 hidden rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-slate-700 dark:text-slate-200"></p>
-      <div id="text_changes" class="mt-2 hidden flex-wrap items-center gap-1.5 text-xs" aria-label="Chord changes" aria-live="polite"></div>
+      <p id="capo-suggestion"
+        class="mt-2 hidden rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+      </p>
+      <div id="text_changes_wrap" class="mt-2 hidden">
+        <button type="button" id="text_changes_toggle" aria-expanded="false" aria-controls="text_changes"
+          class="flex items-center gap-1 text-xs text-muted-light transition-colors hover:text-accent focus:outline-none focus:text-accent dark:text-muted">
+          <svg id="text_changes_caret" class="h-3 w-3 transition-transform" viewBox="0 0 12 12" fill="none"
+            aria-hidden="true">
+            <path d="M4 2.5 8 6l-4 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+          <span id="text_changes_label"></span>
+        </button>
+        <div id="text_changes" class="mt-1.5 hidden flex-wrap items-center gap-1.5 text-xs" aria-label="Chord changes"
+          aria-live="polite"></div>
+      </div>
     </div>
   </div>
 
-  <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-    <p id="text_status" class="text-xs text-muted-light dark:text-muted" role="status" aria-live="polite"></p>
-    <div class="flex items-center gap-2">
-      <button type="button" id="text_stage" disabled
-        class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
-        Stage view
-      </button>
-      <button type="button" id="text_copy" disabled
-        class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
-        Copy
-      </button>
-    </div>
+  <div class="mt-3 flex items-center justify-end gap-2">
+    <button type="button" id="text_stage" disabled
+      class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
+      Stage view
+    </button>
+    <button type="button" id="text_copy" disabled
+      class="flex items-center gap-1.5 rounded-lg border border-app-border-light bg-bg-light px-3 py-1.5 text-sm text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50 dark:border-app-border dark:bg-bg dark:text-slate-200">
+      Copy
+    </button>
   </div>
 </section>
