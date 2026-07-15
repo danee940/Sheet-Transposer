@@ -547,6 +547,28 @@ def _text_uses_german(text):
     return False
 
 
+def _transpose_text_core(text, semitones, use_flats):
+    """Transpose chord lines in plain text by a semitone count, returning (text, changes).
+
+    Only lines detected as chord lines are transposed; lyric and blank lines are
+    left untouched. German H notation is detected from the text so the correct
+    chromatic spelling is used.
+    """
+    german = _text_uses_german(text)
+    spelling = choose_spelling(use_flats, german)
+
+    changes: set[tuple[str, str]] = set()
+    result_parts = []
+    for segment in text.splitlines(keepends=True):
+        content = segment.splitlines()[0]
+        ending = segment[len(content) :]
+        if is_chord_line(content):
+            content = transpose_line_text(content, semitones, spelling, german, changes)
+        result_parts.append(content + ending)
+
+    return "".join(result_parts), sorted(changes)
+
+
 def transpose_text(text, current_key, target_key):
     """Transpose chord lines in plain text and return (text, from_label, to_label, changes).
 
@@ -566,23 +588,26 @@ def transpose_text(text, current_key, target_key):
     german = _text_uses_german(text)
     semitones = (key_semitone(target_note, german) - key_semitone(current_note, german)) % 12
     use_flats = prefers_flats(target_note, target_minor)
-    spelling = choose_spelling(use_flats, german)
 
-    changes: set[tuple[str, str]] = set()
-    result_parts = []
-    for segment in text.splitlines(keepends=True):
-        content = segment.splitlines()[0]
-        ending = segment[len(content) :]
-        if is_chord_line(content):
-            content = transpose_line_text(content, semitones, spelling, german, changes)
-        result_parts.append(content + ending)
-
-    result = "".join(result_parts)
+    result, changes = _transpose_text_core(text, semitones, use_flats)
 
     from_label = key_label(current_note, current_minor)
     to_label = key_label(target_note, target_minor)
 
-    return result, from_label, to_label, sorted(changes)
+    return result, from_label, to_label, changes
+
+
+def transpose_text_by_semitones(text, semitones, use_flats):
+    """Transpose chord lines in plain text by a raw semitone shift.
+
+    ``semitones`` may be any integer; it is normalised to the 0-11 range. The
+    ``use_flats`` flag selects flat spelling over sharp spelling. Returns
+    ``(text, normalised_semitones, changes)``. Unlike the key-based path this
+    ignores musical key context, so the caller chooses the accidental style.
+    """
+    normalised = semitones % 12
+    result, changes = _transpose_text_core(text, normalised, use_flats)
+    return result, normalised, changes
 
 
 def transpose_document_bytes(file_bytes, current_key, target_key):
