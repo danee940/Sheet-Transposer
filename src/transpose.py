@@ -1,4 +1,5 @@
 """Transpose chord sheets in .docx format between musical keys."""
+# pylint: disable=too-many-locals,too-many-arguments,too-many-positional-arguments
 
 import os
 import re

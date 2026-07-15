@@ -1,5 +1,7 @@
 """Integration tests for transpose.py using real .docx documents."""
 # pylint: disable=missing-function-docstring,missing-class-docstring
+# pylint: disable=protected-access,redefined-outer-name,too-few-public-methods,duplicate-code
+# pylint: disable=unused-argument
 
 from io import BytesIO
 from typing import Any
@@ -568,12 +570,12 @@ class TestTranposeTextEndToEnd:
         result, from_label, to_label, _ = t.transpose_text(source, "H", "C")
         assert from_label == "H"
         assert to_label == "C"
-        assert result.split("\n")[0].startswith("C")
+        assert result.split("\n", maxsplit=1)[0].startswith("C")
 
     def test_spacing_preserved_across_chord_width_change(self):
         source = "C   F#  G"
         result, _, _, _ = t.transpose_text(source, "C", "Db")
-        assert result.split("\n")[0].startswith("Db")
+        assert result.split("\n", maxsplit=1)[0].startswith("Db")
 
 
 class TestChordProRoundTrip:
@@ -702,7 +704,7 @@ class TestTextImport:
         assert response.mimetype == "text/plain"
         assert "hymn_D.txt" in response.headers["Content-Disposition"]
         body = response.get_data(as_text=True)
-        assert body.split("\n")[0].startswith("D")
+        assert body.split("\n", maxsplit=1)[0].startswith("D")
         assert "Amazing grace" in body
 
     def test_pro_chordpro_upload_transposed(self, client):

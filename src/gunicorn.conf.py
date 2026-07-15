@@ -1,4 +1,5 @@
 """Gunicorn configuration exposing server lifecycle events in the logs."""
+# pylint: disable=invalid-name,missing-function-docstring
 
 import os
 

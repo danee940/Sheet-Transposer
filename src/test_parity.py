@@ -4,7 +4,7 @@ The same ``src/testdata/transpose_cases.json`` fixture is executed against the
 JavaScript core by ``src/js/transpose/parity.test.js`` so the two
 implementations cannot silently drift.
 """
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,protected-access,too-many-return-statements
 
 import json
 from pathlib import Path

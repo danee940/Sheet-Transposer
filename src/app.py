@@ -1,4 +1,5 @@
 """Flask web frontend for transposing chord sheets in .docx format."""
+# pylint: disable=too-many-locals,too-many-return-statements
 
 import hashlib
 import json
@@ -198,6 +199,12 @@ def robots():
 def favicon():
     """Serve the SVG favicon."""
     return app.send_static_file("favicon.svg")
+
+
+@app.route("/favicon.ico")
+def favicon_ico():
+    """Serve the ICO favicon for crawlers and legacy browsers."""
+    return app.send_static_file("favicon.ico")
 
 
 @app.route("/og-image.png")

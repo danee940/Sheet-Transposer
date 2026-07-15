@@ -286,7 +286,7 @@ WEBAPP_JSONLD = {
     "description": (
         "Free online tool to transpose chords between musical keys. Paste chords for an "
         "instant preview, or upload a .docx chord sheet to download it transposed with "
-        "formatting preserved. Supports standard and German (H) chord notation."
+        "formatting preserved."
     ),
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "Any",
@@ -419,8 +419,10 @@ def _howto_jsonld(name):
     }
 
 
-def _faq_jsonld(faq_items=FAQ_ITEMS):
+def _faq_jsonld(faq_items=None):
     """Return a FAQPage structured-data block built from the given FAQ list."""
+    if faq_items is None:
+        faq_items = FAQ_ITEMS
     return {
         "@context": "https://schema.org",
         "@type": "FAQPage",

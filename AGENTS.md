@@ -17,6 +17,7 @@ before considering the task done. Use the `/check` command, or run directly:
 ```bash
 ruff check .
 ruff format --check .
+pylint
 pyright
 pytest
 ```

@@ -1,5 +1,6 @@
 """Unit tests for transpose.py — targeting ≥95% coverage."""
-# pylint: disable=redefined-outer-name,missing-function-docstring
+# pylint: disable=redefined-outer-name,missing-function-docstring,missing-class-docstring
+# pylint: disable=protected-access,invalid-name,too-few-public-methods,too-many-lines
 
 from io import BytesIO
 from unittest.mock import MagicMock, patch

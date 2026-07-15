@@ -1,5 +1,5 @@
 """Tests for the Flask web layer in app.py."""
-# pylint: disable=redefined-outer-name,missing-function-docstring
+# pylint: disable=redefined-outer-name,missing-function-docstring,protected-access
 
 import json
 import re

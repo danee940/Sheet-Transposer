@@ -3,9 +3,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   {% set resolved_title = page_title | default("Chord Transposer — Transpose Chords Online, Free & Instant") %}
-  {% set resolved_description = page_description | default("Free online chord transposer. Paste your chords, pick the
-  current and target key, and see them transposed instantly — no upload needed. Also transposes .docx chord sheets while
-  keeping formatting, and supports German (H) notation.") %}
+  {% set resolved_description = page_description | default("Free online chord transposer. Paste your chords or upload a .docx chord sheet, pick the current and target key, and get the result instantly — keeps formatting.") %}
   {% set resolved_canonical = canonical_url | default("https://chordtransposer.app/") %}
 
   <title>{{ resolved_title }}</title>
@@ -23,13 +21,14 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:alt" content="Chord Transposer — transpose .docx chord sheets to any key" />
+  <meta property="og:image:alt" content="Chord Transposer — paste chords or transpose .docx chord sheets to any key" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="{{ og_title | default(resolved_title) }}" />
   <meta name="twitter:description" content="{{ og_description | default(resolved_description) }}" />
   <meta name="twitter:image" content="https://chordtransposer.app/og-image.png" />
 
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}?v={{ css_version }}" />
