@@ -335,22 +335,8 @@ def test_chromatic_chart_page_has_reference_tables(client):
     assert "F#m" in body
 
 
-def test_key_pair_page_preselects_keys(client):
-    body = client.get("/transpose/g-to-a").get_data(as_text=True)
-    assert 'data-preselect-from="G"' in body
-    assert 'data-preselect-to="A"' in body
-    current_match = re.search(r'id="text_current_key".*?</select>', body, re.S)
-    target_match = re.search(r'id="text_target_key".*?</select>', body, re.S)
-    assert current_match is not None and target_match is not None
-    current_select = current_match.group(0)
-    target_select = target_match.group(0)
-    assert 'value="G" selected' in current_select
-    assert 'value="A"  selected' in target_select
-
-
-def test_uncurated_key_pair_returns_404(client):
-    assert client.get("/transpose/c-to-c").status_code == 404
-    assert client.get("/transpose/z-to-x").status_code == 404
+def test_home_has_no_data_instrument_attribute(client):
+    assert "data-instrument=" not in client.get("/").get_data(as_text=True)
 
 
 def test_home_has_howto_jsonld(client):
@@ -387,11 +373,6 @@ def test_instrument_pages_preselect_matching_instrument(client):
     for slug, instrument in expected.items():
         body = client.get(f"/{slug}").get_data(as_text=True)
         assert f'data-instrument="{instrument}"' in body
-
-
-def test_home_and_key_pair_pages_omit_data_instrument(client):
-    assert "data-instrument=" not in client.get("/").get_data(as_text=True)
-    assert "data-instrument=" not in client.get("/transpose/g-to-a").get_data(as_text=True)
 
 
 def test_file_page_exists_with_upload_panel(client):
@@ -459,13 +440,6 @@ def test_sitemap_lists_every_landing_url(client):
 def test_robots_txt_points_to_sitemap(client):
     body = client.get("/robots.txt").get_data(as_text=True)
     assert f"Sitemap: {seo.SITE_URL}/sitemap.xml" in body
-
-
-def test_capo_suggestion_covers_all_branches():
-    assert seo._capo_suggestion("C", "C", 0) == "no capo is needed because the keys are the same"
-    assert "fret 2" in seo._capo_suggestion("C", "D", 2)
-    downshift = seo._capo_suggestion("C", "A", 9)
-    assert "transpose down 3 semitones" in downshift
 
 
 def _text_upload(data_bytes, filename="song.txt") -> dict[str, Any]:

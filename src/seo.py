@@ -1,12 +1,12 @@
 """Data and structured-content helpers for the server-rendered SEO landing pages.
 
 This module is the single source of truth for the FAQ, the how-to steps, the
-curated key-pair pages, the instrument pages, and the chromatic transposition
-chart. Both the Flask routes and the templates read their content from here so
-the visible copy and the JSON-LD structured data cannot drift apart.
+instrument pages, and the chromatic transposition chart. Both the Flask routes
+and the templates read their content from here so the visible copy and the
+JSON-LD structured data cannot drift apart.
 """
 
-from transpose import SHARP_SPELLING, key_semitone, parse_key, transpose_text
+from transpose import SHARP_SPELLING
 
 SITE_URL = "https://chordtransposer.app"
 
@@ -293,25 +293,6 @@ WEBAPP_JSONLD = {
     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
 }
 
-CURATED_KEY_PAIRS = [
-    ("C", "D"),
-    ("C", "G"),
-    ("C", "A"),
-    ("C", "E"),
-    ("C", "F"),
-    ("G", "A"),
-    ("G", "C"),
-    ("G", "E"),
-    ("D", "C"),
-    ("D", "E"),
-    ("D", "G"),
-    ("A", "G"),
-    ("E", "G"),
-    ("E", "D"),
-    ("F", "G"),
-    ("Bb", "C"),
-]
-
 INSTRUMENTS = [
     {
         "instrument": "guitar",
@@ -403,22 +384,6 @@ INSTRUMENTS = [
     },
 ]
 
-_INTERVAL_NAMES = {
-    1: "a semitone",
-    2: "a whole step",
-    3: "a minor third",
-    4: "a major third",
-    5: "a perfect fourth",
-    6: "a tritone",
-    7: "a perfect fifth",
-    8: "a minor sixth",
-    9: "a major sixth",
-    10: "a minor seventh",
-    11: "a major seventh",
-}
-
-_EXAMPLE_CHORDS = ["C", "F", "G", "Am"]
-
 COMPACT_CHART_SHIFTS = [2, 5, 7]
 
 _SHIFT_LABELS = {
@@ -426,44 +391,6 @@ _SHIFT_LABELS = {
     5: "+5 (fourth)",
     7: "+7 (fifth)",
 }
-
-
-def _key_slug(key):
-    """Return the lowercase URL fragment for a key such as 'bb' for 'Bb'."""
-    return key.replace("#", "-sharp").lower()
-
-
-def _semitone_delta(from_key, to_key):
-    """Return the upward semitone distance (0-11) between two major keys."""
-    from_parsed = parse_key(from_key)
-    to_parsed = parse_key(to_key)
-    assert from_parsed is not None and to_parsed is not None
-    from_note, _ = from_parsed
-    to_note, _ = to_parsed
-    return (key_semitone(to_note, False) - key_semitone(from_note, False)) % 12
-
-
-def _capo_suggestion(from_key, to_key, delta_up):
-    """Return a guitar capo tip for moving from one key to another."""
-    if delta_up == 0:
-        return "no capo is needed because the keys are the same"
-    if delta_up <= 7:
-        return (
-            f"clamp a capo on fret {delta_up} and keep playing {from_key} shapes to sound in "
-            f"{to_key}"
-        )
-    down = 12 - delta_up
-    return (
-        f"a capo only raises pitch, so either transpose down {down} semitones on paper or play "
-        f"{to_key} shapes directly"
-    )
-
-
-def _example_progression(target_key):
-    """Return the I-IV-V-vi progression spelled for a key, joined for prose."""
-    return " – ".join(
-        transpose_text(chord, "C", target_key)[0].strip() for chord in _EXAMPLE_CHORDS
-    )
 
 
 def _breadcrumbs(title, path):
@@ -528,63 +455,6 @@ def _breadcrumb_jsonld(breadcrumbs):
 def home_jsonld():
     """Return the structured-data blocks for the home page."""
     return [WEBAPP_JSONLD, _howto_jsonld("How to transpose chords"), _faq_jsonld()]
-
-
-def _key_pair_page(from_key, to_key):
-    """Build the full page record for a curated key-pair landing page."""
-    delta_up = _semitone_delta(from_key, to_key)
-    down = 12 - delta_up
-    interval = _INTERVAL_NAMES[delta_up]
-    example_from = _example_progression(from_key)
-    example_to = _example_progression(to_key)
-
-    if delta_up <= 6:
-        direction = (
-            f"That raises every chord by {interval} ({delta_up} semitones up), a common move "
-            f"when the original sits a little low for the singer."
-        )
-    else:
-        direction = (
-            f"That is {interval} up ({delta_up} semitones), or the same as moving {down} "
-            f"semitones down — handy when {from_key} sits too high to sing comfortably."
-        )
-
-    path = f"/transpose/{_key_slug(from_key)}-to-{_key_slug(to_key)}"
-    title = f"Transpose {from_key} to {to_key} — Chord Transposer"
-    intro_paragraphs = [
-        f"Moving a song from {from_key} to {to_key} shifts every chord by the same interval so "
-        f"the melody is untouched. {direction}",
-        f"On guitar, {_capo_suggestion(from_key, to_key, delta_up)}. As a quick check, a "
-        f"I–IV–V–vi progression that reads {example_from} in {from_key} becomes {example_to} in "
-        f"{to_key}.",
-    ]
-    breadcrumbs = _breadcrumbs(f"{from_key} to {to_key}", path)
-    return {
-        "id": f"transpose_{_key_slug(from_key)}_to_{_key_slug(to_key)}".replace("-", "_"),
-        "path": path,
-        "kind": "pair",
-        "title": title,
-        "description": (
-            f"Transpose chords from {from_key} to {to_key} online and free. Shift a full chord "
-            f"sheet up by {interval} instantly, with a capo tip and worked example."
-        ),
-        "h1": f"Transpose chords from {from_key} to {to_key}",
-        "intro_paragraphs": intro_paragraphs,
-        "canonical": f"{SITE_URL}{path}",
-        "preselect_from": from_key,
-        "preselect_to": to_key,
-        "delta_up": delta_up,
-        "example_from": example_from,
-        "example_to": example_to,
-        "faq_items": FAQ_ITEMS,
-        "show_capo": True,
-        "breadcrumbs": breadcrumbs,
-        "jsonld": [
-            _howto_jsonld(f"How to transpose chords from {from_key} to {to_key}"),
-            _faq_jsonld(),
-            _breadcrumb_jsonld(breadcrumbs),
-        ],
-    }
 
 
 def _instrument_page(instrument):
@@ -779,11 +649,10 @@ def _file_page():
 
 
 def landing_pages():
-    """Return every server-rendered landing page record in navigation order."""
+    """Return every indexable landing page record in navigation order."""
     pages = [_instrument_page(instrument) for instrument in INSTRUMENTS]
     pages.append(_file_page())
     pages.append(_chart_page())
-    pages.extend(_key_pair_page(from_key, to_key) for from_key, to_key in CURATED_KEY_PAIRS)
     return pages
 
 
