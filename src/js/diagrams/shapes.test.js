@@ -73,10 +73,25 @@ describe("guitar movable barre fallbacks", () => {
   });
 });
 
-describe("graceful fallback for unsupported fretted qualities", () => {
-  it("returns null for a guitar diminished chord", () => {
-    expect(guitarFrets("Cdim")).toBeNull();
-  });
+describe("movable barre shapes for extended qualities", () => {
+  const expected = {
+    Cdim: [-1, 3, 4, 5, 4, -1],
+    Cdim7: [-1, 3, 4, 5, 4, 5],
+    Caug: [-1, 3, 6, 5, 5, 4],
+    Csus2: [-1, 3, 5, 5, 3, 3],
+    Csus4: [-1, 3, 5, 5, 6, 3],
+    "G#m7b5": [-1, 11, 12, 11, 12, -1],
+    C6: [-1, 3, 5, 5, 5, 5],
+    Cm6: [-1, 3, 5, 5, 4, 5],
+    C9: [-1, 3, -1, 3, 3, 3],
+    Cm9: [-1, 3, -1, 3, 3, 4],
+    Cadd9: [-1, 3, 5, 7, 3, 3],
+  };
+  for (const [symbol, frets] of Object.entries(expected)) {
+    it(`returns a movable shape for ${symbol}`, () => {
+      expect(guitarFrets(symbol)).toEqual(frets);
+    });
+  }
 
   it("still resolves the same chord on piano", () => {
     const shape = lookupShape(parseChordSymbol("Cdim"), "piano");

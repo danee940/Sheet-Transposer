@@ -45,7 +45,24 @@ export const QUALITY_LABELS = {
   add9: "added ninth",
 };
 
-const FRETTED_FAMILIES = new Set(["maj", "min", "dom7", "min7", "maj7"]);
+const FRETTED_FAMILIES = new Set([
+  "maj",
+  "min",
+  "dom7",
+  "min7",
+  "maj7",
+  "dim",
+  "dim7",
+  "aug",
+  "sus2",
+  "sus4",
+  "min7b5",
+  "maj6",
+  "min6",
+  "dom9",
+  "min9",
+  "add9",
+]);
 
 function rootSemitone(name, german) {
   const semitone = keySemitone(name, german);
@@ -195,6 +212,17 @@ const GUITAR_BARRE_TEMPLATES = {
       dom7: [-1, 0, 2, 0, 2, 0],
       min7: [-1, 0, 2, 0, 1, 0],
       maj7: [-1, 0, 2, 1, 2, 0],
+      dim: [-1, 0, 1, 2, 1, -1],
+      dim7: [-1, 0, 1, 2, 1, 2],
+      aug: [-1, 0, 3, 2, 2, 1],
+      sus2: [-1, 0, 2, 2, 0, 0],
+      sus4: [-1, 0, 2, 2, 3, 0],
+      min7b5: [-1, 0, 1, 0, 1, -1],
+      maj6: [-1, 0, 2, 2, 2, 2],
+      min6: [-1, 0, 2, 2, 1, 2],
+      dom9: [-1, 0, -1, 0, 0, 0],
+      min9: [-1, 0, -1, 0, 0, 1],
+      add9: [-1, 0, 2, 4, 0, 0],
     },
   },
 };

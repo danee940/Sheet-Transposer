@@ -45,8 +45,14 @@ describe("renderDiagram", () => {
   });
 
   it("reports when no stored shape exists for a fretted instrument", () => {
-    const node = render("Cdim", "guitar");
-    expect(node.textContent).toContain("No stored Guitar shape.");
+    const node = render("C#", "ukulele");
+    expect(node.textContent).toContain("No stored Ukulele shape.");
+  });
+
+  it("renders a guitar fretboard for a half-diminished chord", () => {
+    const node = render("G#m7b5", "guitar");
+    expect(node.querySelector("svg.diagram-fretboard")).not.toBeNull();
+    expect(node.textContent).toContain("half-diminished");
   });
 
   it("lists the chord tones", () => {
