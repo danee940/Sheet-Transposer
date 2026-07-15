@@ -58,6 +58,10 @@ export function initPaste() {
   const textStage = document.getElementById("text_stage");
   const capoSuggestion = document.getElementById("capo-suggestion");
   const textChanges = document.getElementById("text_changes");
+  const textChangesWrap = document.getElementById("text_changes_wrap");
+  const textChangesToggle = document.getElementById("text_changes_toggle");
+  const textChangesLabel = document.getElementById("text_changes_label");
+  const textChangesCaret = document.getElementById("text_changes_caret");
 
   const stageView = createStageView();
 
@@ -73,12 +77,10 @@ export function initPaste() {
   applyPreselect(textCurrentKey, panelPaste.dataset.preselectFrom);
   applyPreselect(textTargetKey, panelPaste.dataset.preselectTo);
   const SAMPLE_CHORDS =
-    "C           G           Am          F\n" +
-    "Twinkle twinkle little star\n\n" +
-    "C           G           C\n" +
-    "How I wonder what you are\n\n" +
-    "F      C      G      C\n" +
-    "Up above the world so high";
+    "Am7          D7           Gmaj7\n" +
+    "The falling leaves drift by the window\n\n" +
+    "Cmaj7           F#m7b5       B7\n" +
+    "The autumn leaves of red and gold";
 
   let transposeMode = "key";
   let semitones = 0;
@@ -235,9 +237,30 @@ export function initPaste() {
       : `${label} · no chords found to change`;
   }
 
+  let changesCount = 0;
+
+  function changesLabel(action) {
+    return `${action} ${changesCount} chord change${changesCount === 1 ? "" : "s"}`;
+  }
+
+  function collapseChanges() {
+    textChanges.classList.add("hidden");
+    textChangesToggle.setAttribute("aria-expanded", "false");
+    textChangesCaret.classList.remove("rotate-90");
+    textChangesLabel.textContent = changesLabel("Show");
+  }
+
+  function expandChanges() {
+    textChanges.classList.remove("hidden");
+    textChangesToggle.setAttribute("aria-expanded", "true");
+    textChangesCaret.classList.add("rotate-90");
+    textChangesLabel.textContent = changesLabel("Hide");
+  }
+
   function hideChanges() {
     textChanges.replaceChildren();
-    textChanges.classList.add("hidden");
+    textChangesWrap.classList.add("hidden");
+    collapseChanges();
   }
 
   function renderChanges(data) {
@@ -259,7 +282,9 @@ export function initPaste() {
       pills.push(pill);
     }
     textChanges.replaceChildren(...pills);
-    textChanges.classList.remove("hidden");
+    changesCount = pills.length;
+    textChangesWrap.classList.remove("hidden");
+    collapseChanges();
   }
 
   function syncOutputControls() {
@@ -346,6 +371,14 @@ export function initPaste() {
     persistPrefs();
   });
 
+  textChangesToggle.addEventListener("click", () => {
+    if (textChanges.classList.contains("hidden")) {
+      expandChanges();
+    } else {
+      collapseChanges();
+    }
+  });
+
   textStage.addEventListener("click", () => {
     if (!textOutput.textContent.trim()) return;
     stageView.open(textOutput.textContent);
@@ -400,7 +433,12 @@ export function initPaste() {
   if (!panelPaste.dataset.preselectTo && savedPrefs.targetKey) {
     textTargetKey.value = savedPrefs.targetKey;
   }
-  if (savedPrefs.instrument) instrument = savedPrefs.instrument;
+  const pageInstrument = panelPaste.dataset.instrument;
+  if (pageInstrument) {
+    instrument = pageInstrument;
+  } else if (savedPrefs.instrument) {
+    instrument = savedPrefs.instrument;
+  }
   textInstrument.value = instrument;
   if (typeof savedPrefs.semitones === "number") {
     semitones = Math.max(-MAX_SEMITONES, Math.min(MAX_SEMITONES, savedPrefs.semitones));

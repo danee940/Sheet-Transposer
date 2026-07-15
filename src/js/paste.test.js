@@ -11,7 +11,8 @@ function buildDom(attrs = {}) {
   document.body.innerHTML = `
     <div id="panel-paste" data-max-semitones="${merged.maxSemitones}"
       ${merged.preselectFrom ? `data-preselect-from="${merged.preselectFrom}"` : ""}
-      ${merged.preselectTo ? `data-preselect-to="${merged.preselectTo}"` : ""}>
+      ${merged.preselectTo ? `data-preselect-to="${merged.preselectTo}"` : ""}
+      ${merged.dataInstrument ? `data-instrument="${merged.dataInstrument}"` : ""}>
       <textarea id="text_input"></textarea>
       <div id="text_output"></div>
       <div id="text_status"></div>
@@ -37,10 +38,16 @@ function buildDom(attrs = {}) {
       <button class="semitone-quick" data-semitone="5"></button>
       <button id="notation_sharp"></button>
       <button id="notation_flat"></button>
-      <select id="text_instrument"><option value="guitar">Guitar</option><option value="piano">Piano</option></select>
+      <select id="text_instrument"><option value="guitar">Guitar</option><option value="ukulele">Ukulele</option><option value="piano">Piano</option></select>
       <button id="text_stage"></button>
       <div id="capo-suggestion" class="hidden"></div>
-      <div id="text_changes" class="hidden"></div>
+      <div id="text_changes_wrap" class="hidden">
+        <button id="text_changes_toggle" aria-expanded="false">
+          <svg id="text_changes_caret"></svg>
+          <span id="text_changes_label"></span>
+        </button>
+        <div id="text_changes" class="hidden"></div>
+      </div>
     </div>
   `;
 }
@@ -105,6 +112,12 @@ describe("initPaste", () => {
   function changes() {
     return document.getElementById("text_changes");
   }
+  function changesWrap() {
+    return document.getElementById("text_changes_wrap");
+  }
+  function changesToggle() {
+    return document.getElementById("text_changes_toggle");
+  }
 
   it("lists de-duplicated from→to chord mappings by key", () => {
     initPaste();
@@ -112,10 +125,42 @@ describe("initPaste", () => {
     document.getElementById("text_target_key").value = "D";
     type("C G Am F\nC G");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(false);
+    expect(changesWrap().classList.contains("hidden")).toBe(false);
     const pills = [...changes().querySelectorAll("span")].map((p) => p.textContent);
     expect(pills).toContain("C → D");
     expect(pills.filter((p) => p === "C → D")).toHaveLength(1);
+  });
+
+  it("keeps the pill list collapsed until the toggle is clicked", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("text_target_key").value = "D";
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesToggle().getAttribute("aria-expanded")).toBe("false");
+    expect(document.getElementById("text_changes_label").textContent).toContain("Show");
+    changesToggle().dispatchEvent(new Event("click"));
+    expect(changes().classList.contains("hidden")).toBe(false);
+    expect(changesToggle().getAttribute("aria-expanded")).toBe("true");
+    expect(document.getElementById("text_changes_label").textContent).toContain("Hide");
+    changesToggle().dispatchEvent(new Event("click"));
+    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(document.getElementById("text_changes_label").textContent).toContain("Show");
+  });
+
+  it("resets the pill list to collapsed on a new transpose", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("text_target_key").value = "D";
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    changesToggle().dispatchEvent(new Event("click"));
+    expect(changes().classList.contains("hidden")).toBe(false);
+    type("C G Am F Em");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesToggle().getAttribute("aria-expanded")).toBe("false");
   });
 
   it("lists chord mappings in semitone mode", () => {
@@ -124,7 +169,8 @@ describe("initPaste", () => {
     type("C G Am F");
     document.getElementById("semitone_up").dispatchEvent(new Event("click"));
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(false);
+    expect(changesWrap().classList.contains("hidden")).toBe(false);
+    changesToggle().dispatchEvent(new Event("click"));
     expect(changes().querySelectorAll("span").length).toBeGreaterThan(0);
   });
 
@@ -134,7 +180,7 @@ describe("initPaste", () => {
     document.getElementById("text_target_key").value = "D";
     type("just lyrics with no chords");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesWrap().classList.contains("hidden")).toBe(true);
     expect(changes().querySelectorAll("span").length).toBe(0);
   });
 
@@ -144,7 +190,7 @@ describe("initPaste", () => {
     document.getElementById("mode-nashville").dispatchEvent(new Event("click"));
     type("C G Am F");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesWrap().classList.contains("hidden")).toBe(true);
   });
 
   it("hides the change list when input is cleared", () => {
@@ -153,10 +199,10 @@ describe("initPaste", () => {
     document.getElementById("text_target_key").value = "D";
     type("C G Am F");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(false);
+    expect(changesWrap().classList.contains("hidden")).toBe(false);
     type("   ");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesWrap().classList.contains("hidden")).toBe(true);
   });
 
   it("hides the change list when the two keys are identical", () => {
@@ -165,10 +211,10 @@ describe("initPaste", () => {
     document.getElementById("text_target_key").value = "D";
     type("C G Am F");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(false);
+    expect(changesWrap().classList.contains("hidden")).toBe(false);
     document.getElementById("text_target_key").value = "C";
     document.getElementById("text_target_key").dispatchEvent(new Event("change"));
-    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesWrap().classList.contains("hidden")).toBe(true);
   });
 
   it("hides the change list at zero semitones", () => {
@@ -176,7 +222,7 @@ describe("initPaste", () => {
     document.getElementById("mode-semitone").dispatchEvent(new Event("click"));
     type("C G Am F");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesWrap().classList.contains("hidden")).toBe(true);
   });
 
   it("hides the change list when an invalid key is used", () => {
@@ -189,7 +235,7 @@ describe("initPaste", () => {
     document.getElementById("text_target_key").value = "D";
     type("C G Am F");
     vi.advanceTimersByTime(300);
-    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changesWrap().classList.contains("hidden")).toBe(true);
   });
 
   it("warns when the two keys are identical", () => {
@@ -383,7 +429,7 @@ describe("initPaste", () => {
     const input = document.getElementById("text_input");
     input.focus = vi.fn();
     document.getElementById("text_sample").dispatchEvent(new Event("click"));
-    expect(input.value).toContain("Twinkle");
+    expect(input.value).toContain("autumn leaves");
     document.getElementById("text_clear").dispatchEvent(new Event("click"));
     expect(input.value).toBe("");
   });
@@ -488,6 +534,27 @@ describe("initPaste preferences", () => {
     expect(document.getElementById("semitone_value").textContent).toBe("+3");
     expect(document.getElementById("text_instrument").value).toBe("piano");
     expect(document.getElementById("notation_flat").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("defaults the instrument to the page instrument when set", () => {
+    buildDom({ dataInstrument: "ukulele" });
+    stubPrefs({});
+    initPaste();
+    expect(document.getElementById("text_instrument").value).toBe("ukulele");
+  });
+
+  it("prefers the page instrument over a saved instrument", () => {
+    buildDom({ dataInstrument: "ukulele" });
+    stubPrefs({ instrument: "piano" });
+    initPaste();
+    expect(document.getElementById("text_instrument").value).toBe("ukulele");
+  });
+
+  it("uses the saved instrument when the page sets none", () => {
+    buildDom();
+    stubPrefs({ instrument: "piano" });
+    initPaste();
+    expect(document.getElementById("text_instrument").value).toBe("piano");
   });
 
   it("prefers preselect attributes over saved keys", () => {

@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const initCapo = vi.fn();
 const initPaste = vi.fn();
 const initSyncedPanes = vi.fn();
+const initUpload = vi.fn();
 
 vi.mock("./capo.js", () => ({ initCapo }));
 vi.mock("./paste.js", () => ({ initPaste }));
 vi.mock("./panes.js", () => ({ initSyncedPanes }));
+vi.mock("./upload.js", () => ({ initUpload }));
 
 describe("landing entry point", () => {
   beforeEach(() => {
@@ -23,6 +25,7 @@ describe("landing entry point", () => {
     expect(initPaste).not.toHaveBeenCalled();
     expect(initSyncedPanes).not.toHaveBeenCalled();
     expect(initCapo).not.toHaveBeenCalled();
+    expect(initUpload).not.toHaveBeenCalled();
   });
 
   it("initialises the paste panel and capo table when present", async () => {
@@ -31,5 +34,14 @@ describe("landing entry point", () => {
     expect(initPaste).toHaveBeenCalledOnce();
     expect(initSyncedPanes).toHaveBeenCalledOnce();
     expect(initCapo).toHaveBeenCalledOnce();
+    expect(initUpload).not.toHaveBeenCalled();
+  });
+
+  it("initialises the upload panel on the file transposer page", async () => {
+    document.body.innerHTML = `<form id="form"></form>`;
+    await import("./landing.js");
+    expect(initUpload).toHaveBeenCalledOnce();
+    expect(initPaste).not.toHaveBeenCalled();
+    expect(initCapo).not.toHaveBeenCalled();
   });
 });

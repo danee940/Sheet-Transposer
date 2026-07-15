@@ -16,6 +16,7 @@ describe("main entry point", () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    document.body.innerHTML = "";
   });
 
   it("wires up every feature on load", async () => {
@@ -23,7 +24,17 @@ describe("main entry point", () => {
     expect(initUpload).toHaveBeenCalledOnce();
     expect(initTabs).toHaveBeenCalledOnce();
     expect(initPaste).toHaveBeenCalledOnce();
-    expect(initCapo).toHaveBeenCalledOnce();
     expect(initSyncedPanes).toHaveBeenCalledOnce();
+  });
+
+  it("skips the capo table when the capo widget is absent", async () => {
+    await import("./main.js");
+    expect(initCapo).not.toHaveBeenCalled();
+  });
+
+  it("initialises the capo table when the capo widget is present", async () => {
+    document.body.innerHTML = `<div id="capo-key"></div>`;
+    await import("./main.js");
+    expect(initCapo).toHaveBeenCalledOnce();
   });
 });

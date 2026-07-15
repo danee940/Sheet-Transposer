@@ -43,7 +43,13 @@ function buildDom() {
       <select id="text_instrument"><option value="guitar">Guitar</option></select>
       <button id="text_stage"></button>
       <div id="capo-suggestion" class="hidden"></div>
-      <div id="text_changes" class="hidden"></div>
+      <div id="text_changes_wrap" class="hidden">
+        <button id="text_changes_toggle" aria-expanded="false">
+          <svg id="text_changes_caret"></svg>
+          <span id="text_changes_label"></span>
+        </button>
+        <div id="text_changes" class="hidden"></div>
+      </div>
     </div>
   `;
 }

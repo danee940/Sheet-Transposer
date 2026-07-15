@@ -7,5 +7,5 @@ import { initUpload } from "./upload.js";
 initUpload();
 initTabs();
 initPaste();
-initCapo();
+if (document.getElementById("capo-key")) initCapo();
 initSyncedPanes();
