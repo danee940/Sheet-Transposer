@@ -57,6 +57,7 @@ export function initPaste() {
   const textInstrument = document.getElementById("text_instrument");
   const textStage = document.getElementById("text_stage");
   const capoSuggestion = document.getElementById("capo-suggestion");
+  const textChanges = document.getElementById("text_changes");
 
   const stageView = createStageView();
 
@@ -234,6 +235,33 @@ export function initPaste() {
       : `${label} · no chords found to change`;
   }
 
+  function hideChanges() {
+    textChanges.replaceChildren();
+    textChanges.classList.add("hidden");
+  }
+
+  function renderChanges(data) {
+    const changes = Array.isArray(data.changes) ? data.changes : [];
+    if (transposeMode === "nashville" || changes.length === 0) {
+      hideChanges();
+      return;
+    }
+    const seen = new Set();
+    const pills = [];
+    for (const { from, to } of changes) {
+      const key = `${from}→${to}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const pill = document.createElement("span");
+      pill.className =
+        "rounded-full border border-app-border-light bg-bg-light px-2 py-0.5 font-mono text-slate-700 dark:border-app-border dark:bg-bg dark:text-slate-200";
+      pill.textContent = `${from} → ${to}`;
+      pills.push(pill);
+    }
+    textChanges.replaceChildren(...pills);
+    textChanges.classList.remove("hidden");
+  }
+
   function syncOutputControls() {
     textStage.disabled = !textOutput.textContent.trim();
     updateCapoSuggestion();
@@ -246,11 +274,13 @@ export function initPaste() {
       textCopy.disabled = true;
       setTextStatus("");
       chordproFormatToggle.classList.add("hidden");
+      hideChanges();
       syncOutputControls();
       return;
     }
     if (transposeMode === "key" && textCurrentKey.value === textTargetKey.value) {
       setTextStatus("Pick two different keys to transpose.");
+      hideChanges();
       syncOutputControls();
       return;
     }
@@ -258,6 +288,7 @@ export function initPaste() {
       diagrams.renderInto(textOutput, text);
       textCopy.disabled = !text;
       setTextStatus("No shift · pick a semitone offset to transpose.");
+      hideChanges();
       syncOutputControls();
       return;
     }
@@ -270,7 +301,9 @@ export function initPaste() {
       diagrams.renderInto(textOutput, data.text);
       textCopy.disabled = !data.text;
       setTextStatus(summariseResult(data));
+      renderChanges(data);
     } catch (error) {
+      hideChanges();
       if (error instanceof InvalidKeyError) {
         setTextStatus(error.message);
       } else {

@@ -42,6 +42,11 @@ def test_index_lists_keys(client):
     assert b"Chord Transposer" in response.data
 
 
+def test_index_shows_docx_formatting_moat_badge(client):
+    body = client.get("/").get_data(as_text=True)
+    assert "Keeps your Word (.docx) formatting intact" in body
+
+
 def test_index_links_versioned_stylesheet(client):
     response = client.get("/")
     body = response.get_data(as_text=True)

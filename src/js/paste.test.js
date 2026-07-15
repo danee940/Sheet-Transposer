@@ -40,6 +40,7 @@ function buildDom(attrs = {}) {
       <select id="text_instrument"><option value="guitar">Guitar</option><option value="piano">Piano</option></select>
       <button id="text_stage"></button>
       <div id="capo-suggestion" class="hidden"></div>
+      <div id="text_changes" class="hidden"></div>
     </div>
   `;
 }
@@ -99,6 +100,96 @@ describe("initPaste", () => {
     vi.advanceTimersByTime(300);
     expect(output().textContent).toContain("D");
     expect(status()).toContain("C → D");
+  });
+
+  function changes() {
+    return document.getElementById("text_changes");
+  }
+
+  it("lists de-duplicated from→to chord mappings by key", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("text_target_key").value = "D";
+    type("C G Am F\nC G");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(false);
+    const pills = [...changes().querySelectorAll("span")].map((p) => p.textContent);
+    expect(pills).toContain("C → D");
+    expect(pills.filter((p) => p === "C → D")).toHaveLength(1);
+  });
+
+  it("lists chord mappings in semitone mode", () => {
+    initPaste();
+    document.getElementById("mode-semitone").dispatchEvent(new Event("click"));
+    type("C G Am F");
+    document.getElementById("semitone_up").dispatchEvent(new Event("click"));
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(false);
+    expect(changes().querySelectorAll("span").length).toBeGreaterThan(0);
+  });
+
+  it("hides the change list when no chords change", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("text_target_key").value = "D";
+    type("just lyrics with no chords");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
+    expect(changes().querySelectorAll("span").length).toBe(0);
+  });
+
+  it("hides the change list in nashville mode", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("mode-nashville").dispatchEvent(new Event("click"));
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
+  });
+
+  it("hides the change list when input is cleared", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("text_target_key").value = "D";
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(false);
+    type("   ");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
+  });
+
+  it("hides the change list when the two keys are identical", () => {
+    initPaste();
+    document.getElementById("text_current_key").value = "C";
+    document.getElementById("text_target_key").value = "D";
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(false);
+    document.getElementById("text_target_key").value = "C";
+    document.getElementById("text_target_key").dispatchEvent(new Event("change"));
+    expect(changes().classList.contains("hidden")).toBe(true);
+  });
+
+  it("hides the change list at zero semitones", () => {
+    initPaste();
+    document.getElementById("mode-semitone").dispatchEvent(new Event("click"));
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
+  });
+
+  it("hides the change list when an invalid key is used", () => {
+    initPaste();
+    const currentKey = document.getElementById("text_current_key");
+    const bad = document.createElement("option");
+    bad.value = "??";
+    currentKey.appendChild(bad);
+    currentKey.value = "??";
+    document.getElementById("text_target_key").value = "D";
+    type("C G Am F");
+    vi.advanceTimersByTime(300);
+    expect(changes().classList.contains("hidden")).toBe(true);
   });
 
   it("warns when the two keys are identical", () => {
