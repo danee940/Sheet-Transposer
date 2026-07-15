@@ -13,6 +13,8 @@ from docx.opc.exceptions import PackageNotFoundError
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, render_template, request, send_file
 
+import seo
+from seo import FAQ_ITEMS, HOWTO_STEPS, SITE_URL
 from transpose import (
     InvalidKeyError,
     PdfConversionError,
@@ -24,8 +26,6 @@ load_dotenv()
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_SEMITONES = 11
-
-SITE_URL = "https://chordtransposer.app"
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 PDF_MIMETYPE = "application/pdf"
@@ -77,6 +77,8 @@ STATIC_CSS_MAX_AGE = 31_536_000
 
 JS_ENTRY = "main.js"
 JS_BUNDLE_FALLBACK = "/static/js/main.js"
+JS_ENTRY_LANDING = "landing.js"
+JS_BUNDLE_LANDING_FALLBACK = "/static/js/landing.js"
 
 
 def _compute_css_version():
@@ -89,7 +91,7 @@ def _compute_css_version():
     return digest[:12]
 
 
-def _resolve_js_bundle():
+def _resolve_js_bundle(entry=JS_ENTRY, fallback=JS_BUNDLE_FALLBACK):
     """Return the hashed frontend entry URL from Vite's build manifest.
 
     Falls back to an unhashed path when the manifest is unavailable so the
@@ -99,11 +101,11 @@ def _resolve_js_bundle():
     try:
         manifest = json.loads(manifest_path.read_text())
     except (OSError, ValueError):
-        return JS_BUNDLE_FALLBACK
-    entry = manifest.get(JS_ENTRY)
-    if not entry or "file" not in entry:
-        return JS_BUNDLE_FALLBACK
-    return f"/static/js/{entry['file']}"
+        return fallback
+    resolved = manifest.get(entry)
+    if not resolved or "file" not in resolved:
+        return fallback
+    return f"/static/js/{resolved['file']}"
 
 
 app = Flask(__name__)
@@ -111,12 +113,17 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
 
 CSS_VERSION = _compute_css_version()
 JS_BUNDLE = _resolve_js_bundle()
+JS_BUNDLE_LANDING = _resolve_js_bundle(JS_ENTRY_LANDING, JS_BUNDLE_LANDING_FALLBACK)
 
 
 @app.context_processor
 def inject_asset_versions():
     """Expose the stylesheet and script cache-busting references to templates."""
-    return {"css_version": CSS_VERSION, "js_bundle": JS_BUNDLE}
+    return {
+        "css_version": CSS_VERSION,
+        "js_bundle": JS_BUNDLE,
+        "js_bundle_landing": JS_BUNDLE_LANDING,
+    }
 
 
 logger.info(
@@ -152,7 +159,17 @@ def set_cache_headers(response):
 @app.route("/")
 def index():
     """Render the upload page with available key options."""
-    return render_template("index.html", keys=KEY_OPTIONS, max_semitones=MAX_SEMITONES)
+    return render_template(
+        "index.html",
+        keys=KEY_OPTIONS,
+        max_semitones=MAX_SEMITONES,
+        faq_items=FAQ_ITEMS,
+        howto_steps=HOWTO_STEPS,
+        chart=seo.compact_chromatic_chart(),
+        nav_sections=seo.nav_sections(),
+        current_path="/",
+        jsonld=seo.home_jsonld(),
+    )
 
 
 @app.route("/health")
@@ -182,13 +199,19 @@ def og_image():
 
 @app.route("/sitemap.xml")
 def sitemap():
-    """Serve a minimal sitemap listing the single public page."""
+    """Serve a sitemap generated from the home page and every landing page."""
+    urls = []
+    for path in seo.sitemap_paths():
+        priority = "1.0" if path == "/" else "0.8"
+        urls.append(
+            f"  <url><loc>{SITE_URL}{path}</loc><changefreq>monthly</changefreq>"
+            f"<priority>{priority}</priority></url>"
+        )
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        f"  <url><loc>{SITE_URL}/</loc><changefreq>monthly</changefreq>"
-        "<priority>1.0</priority></url>\n"
-        "</urlset>\n"
+        + "\n".join(urls)
+        + "\n</urlset>\n"
     )
     return Response(body, mimetype="application/xml")
 
@@ -249,6 +272,45 @@ def transpose():
     response.headers["X-Transpose-To"] = quote(to_label)
     response.headers["X-Transpose-Changes"] = quote(changes_header)
     return response
+
+
+LANDING_PAGES = seo.landing_pages()
+NAV_SECTIONS = seo.nav_sections()
+
+
+def _landing_context(page):
+    """Return the template context for a single landing page."""
+    return {
+        "page": page,
+        "keys": KEY_OPTIONS,
+        "max_semitones": MAX_SEMITONES,
+        "preselect_from": page["preselect_from"],
+        "preselect_to": page["preselect_to"],
+        "faq_items": FAQ_ITEMS,
+        "nav_sections": NAV_SECTIONS,
+        "current_path": page["path"],
+        "page_title": page["title"],
+        "page_description": page["description"],
+        "canonical_url": page["canonical"],
+        "jsonld": page["jsonld"],
+    }
+
+
+def _make_landing_view(page):
+    """Return a view function rendering the shared landing template for a page."""
+
+    def landing_view():
+        return render_template("landing.html", **_landing_context(page))
+
+    return landing_view
+
+
+for _landing_page in LANDING_PAGES:
+    app.add_url_rule(
+        _landing_page["path"],
+        f"landing_{_landing_page['id']}",
+        _make_landing_view(_landing_page),
+    )
 
 
 if __name__ == "__main__":

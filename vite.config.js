@@ -8,7 +8,10 @@ export default defineConfig({
     outDir: resolve(__dirname, "src/static/js"),
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(__dirname, "src/js/main.js"),
+      input: {
+        main: resolve(__dirname, "src/js/main.js"),
+        landing: resolve(__dirname, "src/js/landing.js"),
+      },
       output: {
         entryFileNames: "[name].[hash].js",
         chunkFileNames: "[name].[hash].js",

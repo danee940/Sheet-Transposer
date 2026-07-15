@@ -1,4 +1,5 @@
-<section id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" data-max-semitones="{{ max_semitones }}">
+<section id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" data-max-semitones="{{ max_semitones }}"
+  {% if preselect_from is defined %}data-preselect-from="{{ preselect_from }}"{% endif %}{% if preselect_to is defined %} data-preselect-to="{{ preselect_to }}"{% endif %}>
   <h2 class="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">Transpose chords online</h2>
   <p class="mb-5 text-sm text-muted-light dark:text-muted">
     Paste your chords and see them transposed instantly — no upload, no download.
@@ -25,7 +26,7 @@
       <label for="text_current_key" class="mb-1.5 block text-sm text-muted-light dark:text-muted">Current key</label>
       <select id="text_current_key"
         class="w-full rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 text-sm text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
-        {% for key in keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}
+        {% for key in keys %}<option value="{{ key }}" {% if preselect_from and key == preselect_from %}selected{% endif %}>{{ key }}</option>{% endfor %}
       </select>
     </div>
     <button type="button" id="text_swap" aria-label="Swap keys" title="Swap keys"
@@ -42,7 +43,7 @@
       <label for="text_target_key" class="mb-1.5 block text-sm text-muted-light dark:text-muted">Desired key</label>
       <select id="text_target_key"
         class="w-full rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 text-sm text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
-        {% for key in keys %}<option value="{{ key }}" {% if key=="D" %} selected{% endif %}>{{ key }}</option>{% endfor %}
+        {% for key in keys %}<option value="{{ key }}" {% if key == (preselect_to | default('D')) %} selected{% endif %}>{{ key }}</option>{% endfor %}
       </select>
     </div>
   </div>

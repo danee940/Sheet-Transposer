@@ -1,0 +1,17 @@
+<article class="rounded-2xl border border-app-border-light bg-card-light/60 p-6 backdrop-blur dark:border-app-border dark:bg-card/60 sm:p-8">
+  <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Frequently asked questions</h2>
+  <div class="mt-4 divide-y divide-app-border-light dark:divide-app-border">
+    {% for item in faq_items %}
+    <details class="group py-3">
+      <summary
+        class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {{ item.question }}
+        <span class="ml-4 shrink-0 text-muted-light transition-transform duration-200 group-open:rotate-45 dark:text-muted">&#43;</span>
+      </summary>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        {{ item.answer }}
+      </p>
+    </details>
+    {% endfor %}
+  </div>
+</article>

@@ -63,6 +63,14 @@ export function initPaste() {
   const panelPaste = document.getElementById("panel-paste");
   const MAX_SEMITONES = parseInt(panelPaste.dataset.maxSemitones, 10);
   const diagrams = initDiagrams(() => instrument);
+
+  function applyPreselect(select, value) {
+    if (value && [...select.options].some((option) => option.value === value)) {
+      select.value = value;
+    }
+  }
+  applyPreselect(textCurrentKey, panelPaste.dataset.preselectFrom);
+  applyPreselect(textTargetKey, panelPaste.dataset.preselectTo);
   const SAMPLE_CHORDS =
     "C           G           Am          F\n" +
     "Twinkle twinkle little star\n\n" +
@@ -353,8 +361,12 @@ export function initPaste() {
   });
 
   const savedPrefs = loadPrefs();
-  if (savedPrefs.currentKey) textCurrentKey.value = savedPrefs.currentKey;
-  if (savedPrefs.targetKey) textTargetKey.value = savedPrefs.targetKey;
+  if (!panelPaste.dataset.preselectFrom && savedPrefs.currentKey) {
+    textCurrentKey.value = savedPrefs.currentKey;
+  }
+  if (!panelPaste.dataset.preselectTo && savedPrefs.targetKey) {
+    textTargetKey.value = savedPrefs.targetKey;
+  }
   if (savedPrefs.instrument) instrument = savedPrefs.instrument;
   textInstrument.value = instrument;
   if (typeof savedPrefs.semitones === "number") {

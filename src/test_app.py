@@ -1,6 +1,8 @@
 """Tests for the Flask web layer in app.py."""
 # pylint: disable=redefined-outer-name,missing-function-docstring
 
+import json
+import re
 from io import BytesIO
 from urllib.parse import unquote
 
@@ -8,6 +10,7 @@ import pytest
 from docx import Document
 
 import app as app_module
+import seo
 from app import app
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -234,3 +237,99 @@ def test_transpose_pdf_conversion_failure(client, monkeypatch):
 
     assert response.status_code == 503
     assert "timed out" in response.get_json()["error"]
+
+
+def _jsonld_blocks(body):
+    pattern = r'type="application/ld\+json">(.*?)</script>'
+    return [json.loads(block) for block in re.findall(pattern, body, re.S)]
+
+
+def _jsonld_types(body):
+    return {block.get("@type") for block in _jsonld_blocks(body)}
+
+
+def _title(body):
+    return re.search(r"<title>(.*?)</title>", body, re.S).group(1).strip()
+
+
+def _canonical(body):
+    return re.search(r'<link rel="canonical" href="(.*?)"', body).group(1)
+
+
+def test_landing_pages_return_200_with_unique_title_and_canonical(client):
+    titles = {}
+    canonicals = {}
+    for page in seo.landing_pages():
+        response = client.get(page["path"])
+        assert response.status_code == 200, page["path"]
+        body = response.get_data(as_text=True)
+        titles.setdefault(_title(body), []).append(page["path"])
+        canonicals.setdefault(_canonical(body), []).append(page["path"])
+        assert _canonical(body) == f"{seo.SITE_URL}{page['path']}"
+
+    landing_count = len(seo.landing_pages())
+    assert len(titles) == landing_count
+    assert len(canonicals) == landing_count
+
+
+def test_landing_pages_include_all_structured_data(client):
+    for page in seo.landing_pages():
+        body = client.get(page["path"]).get_data(as_text=True)
+        assert {"HowTo", "FAQPage", "BreadcrumbList"} <= _jsonld_types(body), page["path"]
+
+
+def test_landing_page_title_differs_from_home(client):
+    home_title = _title(client.get("/").get_data(as_text=True))
+    guitar_title = _title(client.get("/guitar-chord-transposer").get_data(as_text=True))
+    assert guitar_title != home_title
+
+
+def test_instrument_pages_exist(client):
+    for slug in ("guitar-chord-transposer", "ukulele-chord-transposer", "piano-chord-transposer"):
+        assert client.get(f"/{slug}").status_code == 200
+
+
+def test_chromatic_chart_page_renders_grid(client):
+    body = client.get("/chromatic-chart").get_data(as_text=True)
+    assert "Chromatic transposition chart" in body
+    assert "+7" in body
+
+
+def test_key_pair_page_preselects_keys(client):
+    body = client.get("/transpose/g-to-a").get_data(as_text=True)
+    assert 'data-preselect-from="G"' in body
+    assert 'data-preselect-to="A"' in body
+    current_select = re.search(r'id="text_current_key".*?</select>', body, re.S).group(0)
+    target_select = re.search(r'id="text_target_key".*?</select>', body, re.S).group(0)
+    assert 'value="G" selected' in current_select
+    assert 'value="A"  selected' in target_select
+
+
+def test_uncurated_key_pair_returns_404(client):
+    assert client.get("/transpose/c-to-c").status_code == 404
+    assert client.get("/transpose/z-to-x").status_code == 404
+
+
+def test_home_has_howto_jsonld(client):
+    body = client.get("/").get_data(as_text=True)
+    assert "HowTo" in _jsonld_types(body)
+    assert "FAQPage" in _jsonld_types(body)
+
+
+def test_faq_is_single_sourced(client):
+    body = client.get("/").get_data(as_text=True)
+    accordion_count = body.count("<summary")
+    faq_block = next(block for block in _jsonld_blocks(body) if block.get("@type") == "FAQPage")
+    assert accordion_count == len(faq_block["mainEntity"]) == len(seo.FAQ_ITEMS)
+
+
+def test_sitemap_lists_every_landing_url(client):
+    body = client.get("/sitemap.xml").get_data(as_text=True)
+    for path in seo.sitemap_paths():
+        assert f"<loc>{seo.SITE_URL}{path}</loc>" in body
+    assert body.count("<url>") == len(seo.sitemap_paths())
+
+
+def test_robots_txt_points_to_sitemap(client):
+    body = client.get("/robots.txt").get_data(as_text=True)
+    assert f"Sitemap: {seo.SITE_URL}/sitemap.xml" in body
