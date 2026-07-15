@@ -72,6 +72,35 @@ def test_css_version_falls_back_when_missing(monkeypatch):
     assert app_module._compute_css_version() == "dev"
 
 
+def test_index_references_hashed_js_bundle(client):
+    response = client.get("/")
+    body = response.get_data(as_text=True)
+    assert f'src="{app_module.JS_BUNDLE}"' in body
+    assert app_module.JS_BUNDLE.startswith("/static/js/")
+
+
+def test_js_bundle_reads_hashed_entry_from_manifest(monkeypatch):
+    monkeypatch.setattr(
+        app_module.Path,
+        "read_text",
+        lambda _self: '{"main.js": {"file": "main.abc123.js"}}',
+    )
+    assert app_module._resolve_js_bundle() == "/static/js/main.abc123.js"
+
+
+def test_js_bundle_falls_back_when_manifest_missing(monkeypatch):
+    def _raise(_self):
+        raise OSError("missing")
+
+    monkeypatch.setattr(app_module.Path, "read_text", _raise)
+    assert app_module._resolve_js_bundle() == app_module.JS_BUNDLE_FALLBACK
+
+
+def test_js_bundle_falls_back_when_entry_malformed(monkeypatch):
+    monkeypatch.setattr(app_module.Path, "read_text", lambda _self: "{}")
+    assert app_module._resolve_js_bundle() == app_module.JS_BUNDLE_FALLBACK
+
+
 def test_health(client):
     response = client.get("/health")
     assert response.status_code == 200

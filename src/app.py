@@ -1,6 +1,7 @@
 """Flask web frontend for transposing chord sheets in .docx format."""
 
 import hashlib
+import json
 import logging
 import os
 from io import BytesIO
@@ -82,6 +83,10 @@ logger = logging.getLogger("chordtransposer")
 STATIC_CSS_MAX_AGE = 31_536_000
 
 
+JS_ENTRY = "main.js"
+JS_BUNDLE_FALLBACK = "/static/js/main.js"
+
+
 def _compute_css_version():
     """Return a short content hash of the built stylesheet for cache-busting."""
     css_path = Path(__file__).resolve().parent / "static" / "tailwind.css"
@@ -92,16 +97,34 @@ def _compute_css_version():
     return digest[:12]
 
 
+def _resolve_js_bundle():
+    """Return the hashed frontend entry URL from Vite's build manifest.
+
+    Falls back to an unhashed path when the manifest is unavailable so the
+    templates still render during development before a build has run.
+    """
+    manifest_path = Path(__file__).resolve().parent / "static" / "js" / "manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except (OSError, ValueError):
+        return JS_BUNDLE_FALLBACK
+    entry = manifest.get(JS_ENTRY)
+    if not entry or "file" not in entry:
+        return JS_BUNDLE_FALLBACK
+    return f"/static/js/{entry['file']}"
+
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
 
 CSS_VERSION = _compute_css_version()
+JS_BUNDLE = _resolve_js_bundle()
 
 
 @app.context_processor
-def inject_css_version():
-    """Expose the stylesheet cache-busting version to all templates."""
-    return {"css_version": CSS_VERSION}
+def inject_asset_versions():
+    """Expose the stylesheet and script cache-busting references to templates."""
+    return {"css_version": CSS_VERSION, "js_bundle": JS_BUNDLE}
 
 
 logger.info(
