@@ -1108,3 +1108,49 @@ class TestTransposeText:
     def test_slash_chords_transposed(self):
         result, _, _, _ = t.transpose_text("C/E  G/B", "C", "D")
         assert result.split() == ["D/F#", "A/C#"]
+
+
+class TestTransposeTextBySemitones:
+    def test_positive_shift_uses_sharp_spelling(self):
+        result, semitones, changes = t.transpose_text_by_semitones("C G Am F", 2, False)
+        assert result == "D A Bm G"
+        assert semitones == 2
+        assert ("C", "D") in changes
+
+    def test_negative_shift_normalised(self):
+        result, semitones, _ = t.transpose_text_by_semitones("C", -1, False)
+        assert result == "B"
+        assert semitones == 11
+
+    def test_zero_shift_leaves_text_unchanged(self):
+        result, semitones, changes = t.transpose_text_by_semitones("C G Am F", 0, False)
+        assert result == "C G Am F"
+        assert semitones == 0
+        assert changes == []
+
+    def test_flat_spelling_when_requested(self):
+        result, _, _ = t.transpose_text_by_semitones("C", 1, True)
+        assert result == "Db"
+
+    def test_sharp_spelling_when_requested(self):
+        result, _, _ = t.transpose_text_by_semitones("C", 1, False)
+        assert result == "C#"
+
+    def test_leaves_lyric_lines_untouched(self):
+        result, _, _ = t.transpose_text_by_semitones("C G\nThese are the lyrics", 2, False)
+        assert result == "D A\nThese are the lyrics"
+
+    def test_german_notation_detected(self):
+        result, _, _ = t.transpose_text_by_semitones("H", 1, False)
+        assert result == "C"
+
+    def test_shift_beyond_octave_wraps(self):
+        result, semitones, _ = t.transpose_text_by_semitones("C", 13, False)
+        assert result == "C#"
+        assert semitones == 1
+
+    def test_empty_text_returns_empty(self):
+        result, semitones, changes = t.transpose_text_by_semitones("", 3, False)
+        assert result == ""
+        assert semitones == 3
+        assert changes == []

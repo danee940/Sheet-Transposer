@@ -227,3 +227,85 @@ def test_transpose_text_empty_body(client):
     response = client.post("/transpose-text", data=b"", content_type="application/json")
     assert response.status_code == 400
     assert "No text" in response.get_json()["error"]
+
+
+def test_transpose_text_by_semitones_success(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C G Am F", "semitones": 2},
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["text"] == "D A Bm G"
+    assert body["semitones"] == 2
+    assert body["notation"] == "sharp"
+    assert "+2 semitones" in body["label"]
+    assert {"from": "C", "to": "D"} in body["changes"]
+
+
+def test_transpose_text_by_semitones_flat_notation(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C", "semitones": 1, "notation": "flat"},
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["text"] == "Db"
+    assert body["notation"] == "flat"
+    assert "♭" in body["label"]
+
+
+def test_transpose_text_by_semitones_negative_label(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "D", "semitones": -1},
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["text"] == "C#"
+    assert body["label"].startswith("−1 semitone")
+
+
+def test_transpose_text_by_semitones_zero_label(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C", "semitones": 0},
+    )
+    assert response.status_code == 200
+    assert "No change" in response.get_json()["label"]
+
+
+def test_transpose_text_by_semitones_rejects_non_integer(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C", "semitones": "2"},
+    )
+    assert response.status_code == 400
+    assert "whole number" in response.get_json()["error"]
+
+
+def test_transpose_text_by_semitones_rejects_boolean(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C", "semitones": True},
+    )
+    assert response.status_code == 400
+    assert "whole number" in response.get_json()["error"]
+
+
+def test_transpose_text_by_semitones_rejects_out_of_range(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C", "semitones": 12},
+    )
+    assert response.status_code == 400
+    assert "between" in response.get_json()["error"]
+
+
+def test_transpose_text_by_semitones_rejects_bad_notation(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C", "semitones": 2, "notation": "double-sharp"},
+    )
+    assert response.status_code == 400
+    assert "sharp" in response.get_json()["error"]
