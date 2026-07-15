@@ -2,6 +2,7 @@
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
 from io import BytesIO
+from typing import Any
 
 import pytest
 from docx import Document
@@ -623,7 +624,7 @@ def fake_pdf(monkeypatch):
     monkeypatch.setattr(app_module, "convert_docx_to_pdf", lambda _docx_bytes: _one_page_pdf())
 
 
-def _binder_upload(*docx_files):
+def _binder_upload(*docx_files) -> dict[str, Any]:
     return {"files": [(BytesIO(data), name) for data, name in docx_files]}
 
 
@@ -673,7 +674,7 @@ class TestPdfBinder:
         assert seen == ["C", "D", "E"]
 
     def test_binder_rejects_non_docx_member(self, client, fake_pdf):
-        data = {"files": [(BytesIO(b"plain text"), "notes.txt")]}
+        data: dict[str, Any] = {"files": [(BytesIO(b"plain text"), "notes.txt")]}
         data.update({"current_key": "C", "target_key": "D"})
         response = client.post("/binder", data=data, content_type="multipart/form-data")
         assert response.status_code == 400

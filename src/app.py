@@ -389,7 +389,7 @@ def binder():
     if not current_key or not target_key:
         return jsonify({"error": "Both current and desired keys are required."}), 400
     for uploaded in uploaded_files:
-        if not uploaded.filename.lower().endswith(".docx"):
+        if not uploaded.filename or not uploaded.filename.lower().endswith(".docx"):
             return jsonify({"error": "Only .docx files are supported in the binder."}), 400
 
     documents = []

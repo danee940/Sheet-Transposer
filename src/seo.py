@@ -435,8 +435,11 @@ def _key_slug(key):
 
 def _semitone_delta(from_key, to_key):
     """Return the upward semitone distance (0-11) between two major keys."""
-    from_note, _ = parse_key(from_key)
-    to_note, _ = parse_key(to_key)
+    from_parsed = parse_key(from_key)
+    to_parsed = parse_key(to_key)
+    assert from_parsed is not None and to_parsed is not None
+    from_note, _ = from_parsed
+    to_note, _ = to_parsed
     return (key_semitone(to_note, False) - key_semitone(from_note, False)) % 12
 
 

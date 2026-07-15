@@ -4,6 +4,7 @@
 import json
 import re
 from io import BytesIO
+from typing import Any
 from urllib.parse import unquote
 
 import pytest
@@ -270,11 +271,15 @@ def _jsonld_types(body):
 
 
 def _title(body):
-    return re.search(r"<title>(.*?)</title>", body, re.S).group(1).strip()
+    m = re.search(r"<title>(.*?)</title>", body, re.S)
+    assert m is not None
+    return m.group(1).strip()
 
 
 def _canonical(body):
-    return re.search(r'<link rel="canonical" href="(.*?)"', body).group(1)
+    m = re.search(r'<link rel="canonical" href="(.*?)"', body)
+    assert m is not None
+    return m.group(1)
 
 
 def test_landing_pages_return_200_with_unique_title_and_canonical(client):
@@ -334,8 +339,11 @@ def test_key_pair_page_preselects_keys(client):
     body = client.get("/transpose/g-to-a").get_data(as_text=True)
     assert 'data-preselect-from="G"' in body
     assert 'data-preselect-to="A"' in body
-    current_select = re.search(r'id="text_current_key".*?</select>', body, re.S).group(0)
-    target_select = re.search(r'id="text_target_key".*?</select>', body, re.S).group(0)
+    current_match = re.search(r'id="text_current_key".*?</select>', body, re.S)
+    target_match = re.search(r'id="text_target_key".*?</select>', body, re.S)
+    assert current_match is not None and target_match is not None
+    current_select = current_match.group(0)
+    target_select = target_match.group(0)
     assert 'value="G" selected' in current_select
     assert 'value="A"  selected' in target_select
 
@@ -399,8 +407,9 @@ def test_file_page_has_distinct_title_and_description(client):
     body = client.get("/file-chord-transposer").get_data(as_text=True)
     home_body = client.get("/").get_data(as_text=True)
     assert _title(body) != _title(home_body)
-    description = re.search(r'<meta name="description" content="(.*?)"', body).group(1)
-    assert ".docx" in description
+    description_match = re.search(r'<meta name="description" content="(.*?)"', body)
+    assert description_match is not None
+    assert ".docx" in description_match.group(1)
 
 
 def test_pages_have_page_specific_faq(client):
@@ -459,7 +468,7 @@ def test_capo_suggestion_covers_all_branches():
     assert "transpose down 3 semitones" in downshift
 
 
-def _text_upload(data_bytes, filename="song.txt"):
+def _text_upload(data_bytes, filename="song.txt") -> dict[str, Any]:
     return {"file": (BytesIO(data_bytes), filename)}
 
 
