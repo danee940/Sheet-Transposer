@@ -107,6 +107,12 @@ def robots():
     return Response(body, mimetype="text/plain")
 
 
+@app.route("/favicon.svg")
+def favicon():
+    """Serve the SVG favicon."""
+    return app.send_static_file("favicon.svg")
+
+
 @app.route("/og-image.png")
 def og_image():
     """Serve the branded social share image used for Open Graph and Twitter cards."""
