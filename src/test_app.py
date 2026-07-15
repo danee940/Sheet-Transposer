@@ -39,6 +39,39 @@ def test_index_lists_keys(client):
     assert b"Chord Transposer" in response.data
 
 
+def test_index_links_versioned_stylesheet(client):
+    response = client.get("/")
+    body = response.get_data(as_text=True)
+    assert "cdn.tailwindcss.com" not in body
+    assert f"/static/tailwind.css?v={app_module.CSS_VERSION}" in body
+
+
+def test_index_html_is_not_cached(client):
+    response = client.get("/")
+    assert response.headers["Cache-Control"] == "no-cache"
+
+
+def test_static_css_is_cached_immutably(client):
+    response = client.get(f"/static/tailwind.css?v={app_module.CSS_VERSION}")
+    assert response.status_code == 200
+    cache_control = response.headers["Cache-Control"]
+    assert "immutable" in cache_control
+    assert f"max-age={app_module.STATIC_CSS_MAX_AGE}" in cache_control
+
+
+def test_css_version_is_stable_hash():
+    assert app_module.CSS_VERSION == app_module._compute_css_version()
+    assert len(app_module.CSS_VERSION) == 12
+
+
+def test_css_version_falls_back_when_missing(monkeypatch):
+    def _raise(_self):
+        raise OSError("missing")
+
+    monkeypatch.setattr(app_module.Path, "read_bytes", _raise)
+    assert app_module._compute_css_version() == "dev"
+
+
 def test_health(client):
     response = client.get("/health")
     assert response.status_code == 200

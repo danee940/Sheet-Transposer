@@ -1,0 +1,13 @@
+{
+  "name": "chord-transposer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build tooling for the Chord Transposer stylesheet.",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i src/styles/tailwind.input.css -o src/static/tailwind.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i src/styles/tailwind.input.css -o src/static/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

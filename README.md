@@ -43,6 +43,23 @@ runs two services:
 
 The `/health` endpoint is used as the deploy healthcheck.
 
+## Styling
+
+The stylesheet is prebuilt with Tailwind into `src/static/tailwind.css` and shipped
+as a normal static asset, so no CDN runs in the browser. The committed CSS file is
+cache-busted via a content hash appended as `?v=` to its URL, and served with a
+long-lived immutable cache header, while HTML pages are sent with `no-cache`.
+
+Rebuild the stylesheet after changing markup or `tailwind.config.js`:
+
+```bash
+npm install
+npm run build:css
+```
+
+Use `npm run watch:css` during development. Commit the regenerated
+`src/static/tailwind.css`; the Docker image does not build it.
+
 ## Development
 
 ```bash

@@ -44,6 +44,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Node / Tailwind build
+node_modules/
+
 # Local dev
 .flaskenv
 
