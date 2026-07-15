@@ -124,6 +124,13 @@ def test_og_image_png(client):
     assert response.get_data().startswith(b"\x89PNG")
 
 
+def test_favicon_svg(client):
+    response = client.get("/favicon.svg")
+    assert response.status_code == 200
+    assert response.mimetype == "image/svg+xml"
+    assert response.get_data(as_text=True).lstrip().startswith("<svg")
+
+
 def test_sitemap_xml(client):
     response = client.get("/sitemap.xml")
     assert response.status_code == 200
