@@ -8,12 +8,21 @@ from urllib.parse import unquote
 
 import pytest
 from docx import Document
+from pypdf import PdfReader, PdfWriter
 
 import app as app_module
 import seo
 from app import app
 
 DOCX_MIMETYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+def _one_page_pdf():
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
 
 
 @pytest.fixture
@@ -352,3 +361,227 @@ def test_capo_suggestion_covers_all_branches():
     assert "fret 2" in seo._capo_suggestion("C", "D", 2)
     downshift = seo._capo_suggestion("C", "A", 9)
     assert "transpose down 3 semitones" in downshift
+
+
+def _text_upload(data_bytes, filename="song.txt"):
+    return {"file": (BytesIO(data_bytes), filename)}
+
+
+def test_transpose_text_missing_file(client):
+    response = client.post(
+        "/transpose-text",
+        data={"current_key": "C", "target_key": "D"},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert "choose a .txt" in response.get_json()["error"]
+
+
+def test_transpose_text_wrong_extension(client):
+    data = _text_upload(b"C G", filename="song.docx")
+    data.update({"current_key": "C", "target_key": "D"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "Only .txt" in response.get_json()["error"]
+
+
+def test_transpose_text_missing_keys(client):
+    data = _text_upload(b"C G")
+    data.update({"current_key": "", "target_key": ""})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "keys are required" in response.get_json()["error"]
+
+
+def test_transpose_text_unsupported_format(client):
+    data = _text_upload(b"C G")
+    data.update({"current_key": "C", "target_key": "D", "format": "docx"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "Unsupported output format" in response.get_json()["error"]
+
+
+def test_transpose_text_empty_file(client):
+    data = _text_upload(b"")
+    data.update({"current_key": "C", "target_key": "D"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "empty" in response.get_json()["error"]
+
+
+def test_transpose_text_too_large(client, monkeypatch):
+    monkeypatch.setattr(app_module, "MAX_UPLOAD_BYTES", 4)
+    data = _text_upload(b"C G Am F")
+    data.update({"current_key": "C", "target_key": "D"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "too large" in response.get_json()["error"]
+
+
+def test_transpose_text_invalid_encoding(client):
+    data = _text_upload(b"\xff\xfe\x00chord")
+    data.update({"current_key": "C", "target_key": "D"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "UTF-8" in response.get_json()["error"]
+
+
+def test_transpose_text_invalid_key(client):
+    data = _text_upload(b"C G")
+    data.update({"current_key": "X", "target_key": "D"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "not a valid key" in response.get_json()["error"]
+
+
+def test_transpose_text_txt_success(client):
+    data = _text_upload(b"C G Am F")
+    data.update({"current_key": "C", "target_key": "D", "format": "txt"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    assert response.mimetype == "text/plain"
+    assert "song_D.txt" in response.headers["Content-Disposition"]
+    assert "C->D" in unquote(response.headers["X-Transpose-Changes"])
+
+
+def test_transpose_text_same_key_reports_no_changes(client):
+    data = _text_upload(b"C G Am F")
+    data.update({"current_key": "C", "target_key": "C", "format": "txt"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    assert unquote(response.headers["X-Transpose-Changes"]) == "none"
+
+
+def test_transpose_text_chordpro_success(client):
+    data = _text_upload(b"[C]Amazing [G]grace", filename="grace.cho")
+    data.update({"current_key": "C", "target_key": "D", "format": "chordpro"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    assert "grace_D.pro" in response.headers["Content-Disposition"]
+    assert response.get_data(as_text=True).startswith("[D]Amazing")
+
+
+def test_transpose_text_pdf_success(client, monkeypatch):
+    monkeypatch.setattr(app_module, "convert_docx_to_pdf", lambda docx_bytes: _one_page_pdf())
+    data = _text_upload(b"C G Am F")
+    data.update({"current_key": "C", "target_key": "D", "format": "pdf"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    assert response.mimetype == "application/pdf"
+    assert "song_D.pdf" in response.headers["Content-Disposition"]
+
+
+def test_transpose_text_pdf_conversion_failure(client, monkeypatch):
+    def _raise(_docx_bytes):
+        raise app_module.PdfConversionError("PDF conversion timed out.")
+
+    monkeypatch.setattr(app_module, "convert_docx_to_pdf", _raise)
+    data = _text_upload(b"C G Am F")
+    data.update({"current_key": "C", "target_key": "D", "format": "pdf"})
+    response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+    assert response.status_code == 503
+    assert "timed out" in response.get_json()["error"]
+
+
+def _make_chord_docx(text="C G Am F"):
+    document = Document()
+    document.add_paragraph(text)
+    buffer = BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def test_binder_no_files(client):
+    response = client.post(
+        "/binder",
+        data={"current_key": "C", "target_key": "D"},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert "at least one" in response.get_json()["error"]
+
+
+def test_binder_too_many_files(client, monkeypatch):
+    monkeypatch.setattr(app_module, "MAX_BINDER_FILES", 1)
+    data = {
+        "files": [(BytesIO(_make_chord_docx()), "a.docx"), (BytesIO(_make_chord_docx()), "b.docx")],
+        "current_key": "C",
+        "target_key": "D",
+    }
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "Too many files" in response.get_json()["error"]
+
+
+def test_binder_missing_keys(client):
+    data = {"files": [(BytesIO(_make_chord_docx()), "a.docx")], "current_key": "", "target_key": ""}
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "keys are required" in response.get_json()["error"]
+
+
+def test_binder_empty_member(client):
+    data = {
+        "files": [(BytesIO(b""), "empty.docx")],
+        "current_key": "C",
+        "target_key": "D",
+    }
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "empty" in response.get_json()["error"]
+
+
+def test_binder_total_too_large(client, monkeypatch):
+    monkeypatch.setattr(app_module, "MAX_BINDER_TOTAL_BYTES", 5)
+    data = {
+        "files": [(BytesIO(_make_chord_docx()), "a.docx")],
+        "current_key": "C",
+        "target_key": "D",
+    }
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "combined maximum" in response.get_json()["error"]
+
+
+def test_binder_invalid_key(client, monkeypatch):
+    monkeypatch.setattr(app_module, "convert_docx_to_pdf", lambda docx_bytes: _one_page_pdf())
+    data = {
+        "files": [(BytesIO(_make_chord_docx()), "a.docx")],
+        "current_key": "X",
+        "target_key": "D",
+    }
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 400
+    assert "not a valid key" in response.get_json()["error"]
+
+
+def test_binder_pdf_conversion_failure(client, monkeypatch):
+    def _raise(_docx_bytes):
+        raise app_module.PdfConversionError("Could not reach the PDF conversion service.")
+
+    monkeypatch.setattr(app_module, "convert_docx_to_pdf", _raise)
+    data = {
+        "files": [(BytesIO(_make_chord_docx()), "a.docx")],
+        "current_key": "C",
+        "target_key": "D",
+    }
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 503
+    assert "conversion service" in response.get_json()["error"]
+
+
+def test_binder_success_merges_pages(client, monkeypatch):
+    monkeypatch.setattr(app_module, "convert_docx_to_pdf", lambda docx_bytes: _one_page_pdf())
+    data = {
+        "files": [
+            (BytesIO(_make_chord_docx("C G")), "a.docx"),
+            (BytesIO(_make_chord_docx("F C")), "b.docx"),
+        ],
+        "current_key": "C",
+        "target_key": "D",
+    }
+    response = client.post("/binder", data=data, content_type="multipart/form-data")
+    assert response.status_code == 200
+    assert response.mimetype == "application/pdf"
+    assert len(PdfReader(BytesIO(response.data)).pages) == 2
+    assert "chord_binder_D.pdf" in response.headers["Content-Disposition"]

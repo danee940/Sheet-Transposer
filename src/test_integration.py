@@ -5,8 +5,11 @@ from io import BytesIO
 
 import pytest
 from docx import Document
+from pypdf import PdfReader, PdfWriter
 
+import app as app_module
 import transpose as t
+from app import app as flask_app
 
 
 def _make_docx(*paragraphs):
@@ -591,3 +594,147 @@ class TestChordProRoundTrip:
         assert nashville == "[1]Amazing [5]grace"
         assert tonic == "C"
         assert t._chordpro_to_plain(source) == "C G"
+
+
+# ---------------------------------------------------------------------------
+# Multi-file PDF binder and broadened text import (end-to-end via Flask)
+# ---------------------------------------------------------------------------
+
+
+def _one_page_pdf():
+    """Return the bytes of a real, single-page PDF for deterministic merge tests."""
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+@pytest.fixture
+def client():
+    flask_app.config["TESTING"] = True
+    with flask_app.test_client() as test_client:
+        yield test_client
+
+
+@pytest.fixture
+def fake_pdf(monkeypatch):
+    """Replace Gotenberg conversion with a real one-page PDF so merges are offline-safe."""
+    monkeypatch.setattr(app_module, "convert_docx_to_pdf", lambda _docx_bytes: _one_page_pdf())
+
+
+def _binder_upload(*docx_files):
+    return {"files": [(BytesIO(data), name) for data, name in docx_files]}
+
+
+class TestPdfBinder:
+    def test_multiple_docx_merge_into_multipage_pdf(self, client, fake_pdf):
+        files = [
+            (_make_docx("C G Am F"), "one.docx"),
+            (_make_docx("F C G"), "two.docx"),
+            (_make_docx("Am Dm E"), "three.docx"),
+        ]
+        data = _binder_upload(*files)
+        data.update({"current_key": "C", "target_key": "D"})
+        response = client.post("/binder", data=data, content_type="multipart/form-data")
+
+        assert response.status_code == 200
+        assert response.mimetype == "application/pdf"
+        reader = PdfReader(BytesIO(response.data))
+        assert len(reader.pages) == 3
+        assert "chord_binder_D.pdf" in response.headers["Content-Disposition"]
+
+    def test_single_docx_binder_is_one_page(self, client, fake_pdf):
+        data = _binder_upload((_make_docx("C G Am F"), "solo.docx"))
+        data.update({"current_key": "C", "target_key": "G"})
+        response = client.post("/binder", data=data, content_type="multipart/form-data")
+
+        assert response.status_code == 200
+        reader = PdfReader(BytesIO(response.data))
+        assert len(reader.pages) == 1
+
+    def test_binder_preserves_upload_order(self, client, monkeypatch):
+        seen = []
+
+        def _record(docx_bytes):
+            seen.append(Document(BytesIO(docx_bytes)).paragraphs[0].text)
+            return _one_page_pdf()
+
+        monkeypatch.setattr(app_module, "convert_docx_to_pdf", _record)
+        files = [
+            (_make_docx("C"), "first.docx"),
+            (_make_docx("D"), "second.docx"),
+            (_make_docx("E"), "third.docx"),
+        ]
+        data = _binder_upload(*files)
+        data.update({"current_key": "C", "target_key": "C"})
+        client.post("/binder", data=data, content_type="multipart/form-data")
+
+        assert seen == ["C", "D", "E"]
+
+    def test_binder_rejects_non_docx_member(self, client, fake_pdf):
+        data = {"files": [(BytesIO(b"plain text"), "notes.txt")]}
+        data.update({"current_key": "C", "target_key": "D"})
+        response = client.post("/binder", data=data, content_type="multipart/form-data")
+        assert response.status_code == 400
+        assert "Only .docx" in response.get_json()["error"]
+
+    def test_binder_invalid_docx_member(self, client, fake_pdf):
+        files = [
+            (_make_docx("C G"), "good.docx"),
+            (b"not a docx", "bad.docx"),
+        ]
+        data = _binder_upload(*files)
+        data.update({"current_key": "C", "target_key": "D"})
+        response = client.post("/binder", data=data, content_type="multipart/form-data")
+        assert response.status_code == 400
+        assert "valid .docx" in response.get_json()["error"]
+
+
+class TestTextImport:
+    def test_txt_upload_transposed_as_text(self, client):
+        source = b"C       G\nAmazing grace\nF       C"
+        data = {"file": (BytesIO(source), "hymn.txt"), "current_key": "C", "target_key": "D"}
+        response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+
+        assert response.status_code == 200
+        assert response.mimetype == "text/plain"
+        assert "hymn_D.txt" in response.headers["Content-Disposition"]
+        body = response.get_data(as_text=True)
+        assert body.split("\n")[0].startswith("D")
+        assert "Amazing grace" in body
+
+    def test_pro_chordpro_upload_transposed(self, client):
+        source = b"[C]Amazing [G]grace how [F]sweet"
+        data = {
+            "file": (BytesIO(source), "grace.pro"),
+            "current_key": "C",
+            "target_key": "D",
+            "format": "chordpro",
+        }
+        response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+
+        assert response.status_code == 200
+        assert "grace_D.pro" in response.headers["Content-Disposition"]
+        assert response.get_data(as_text=True).startswith("[D]Amazing [A]grace")
+
+    def test_text_pdf_output_uses_conversion(self, client, fake_pdf):
+        source = b"C G Am F"
+        data = {
+            "file": (BytesIO(source), "sheet.txt"),
+            "current_key": "C",
+            "target_key": "D",
+            "format": "pdf",
+        }
+        response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+
+        assert response.status_code == 200
+        assert response.mimetype == "application/pdf"
+        assert "sheet_D.pdf" in response.headers["Content-Disposition"]
+        assert PdfReader(BytesIO(response.data)).pages
+
+    def test_text_route_rejects_unsupported_type(self, client):
+        data = {"file": (BytesIO(b"data"), "song.docx"), "current_key": "C", "target_key": "D"}
+        response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
+        assert response.status_code == 400
+        assert "Only .txt" in response.get_json()["error"]

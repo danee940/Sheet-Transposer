@@ -1,11 +1,12 @@
 <section id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" class="hidden">
-  <h2 class="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">Transpose a .docx chord sheet</h2>
+  <h2 class="mb-1 text-lg font-semibold text-slate-900 dark:text-slate-100">Transpose a chord sheet</h2>
   <p class="mb-5 text-sm text-muted-light dark:text-muted">
-    Upload a Word chord sheet and download it transposed with the formatting kept intact.
+    Upload a Word (.docx), plain text (.txt), or ChordPro (.pro/.cho) chord sheet, or drop several
+    .docx files to build a single combined PDF binder — all with the formatting kept intact.
   </p>
 
   <form id="form">
-    <span class="mb-1.5 mt-4 block text-sm text-muted-light dark:text-muted">Chord sheet (.docx)</span>
+    <span class="mb-1.5 mt-4 block text-sm text-muted-light dark:text-muted">Chord sheet (.docx, .txt, .pro, .cho)</span>
     <label id="dropzone" for="file"
       class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-app-border-light bg-bg-light px-4 py-6 text-center transition-colors hover:border-accent focus-within:border-accent focus-within:ring-2 focus-within:ring-accent dark:border-app-border dark:bg-bg">
       <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -15,9 +16,9 @@
         <line x1="12" y1="3" x2="12" y2="15" />
       </svg>
       <span id="dropzone-text" class="text-sm text-muted-light dark:text-muted">
-        <span class="font-medium text-slate-800 dark:text-slate-200">Drop your .docx here</span> or click to browse
+        <span class="font-medium text-slate-800 dark:text-slate-200">Drop your chord sheets here</span> or click to browse
       </span>
-      <input id="file" name="file" type="file" accept=".docx" required class="sr-only" />
+      <input id="file" name="file" type="file" accept=".docx,.txt,.pro,.cho" multiple required class="sr-only" />
     </label>
 
     <div class="mt-4 flex items-end gap-2">

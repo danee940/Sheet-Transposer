@@ -1,4 +1,10 @@
 import { BASE_CLASSES, ERROR_CLASSES, OK_CLASSES, makeCell, makeHeaderCell } from "./dom.js";
+import {
+  InvalidKeyError,
+  isChordProText,
+  transposeChordProText,
+  transposeText,
+} from "./transpose/index.js";
 
 export function initUpload() {
   const form = document.getElementById("form");
@@ -14,8 +20,21 @@ export function initUpload() {
   const swap = document.getElementById("swap");
 
   const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+  const MAX_BINDER_FILES = 20;
+  const MAX_BINDER_TOTAL_BYTES = 40 * 1024 * 1024;
+  const TEXT_EXTENSIONS = [".txt", ".pro", ".cho"];
   const DEFAULT_DROPZONE_HTML =
-    '<span class="font-medium text-slate-800 dark:text-slate-200">Drop your .docx here</span> or click to browse';
+    '<span class="font-medium text-slate-800 dark:text-slate-200">Drop your chord sheets here</span> or click to browse';
+
+  let textPreviewSource = null;
+
+  function isTextName(name) {
+    return TEXT_EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext));
+  }
+
+  function isDocxName(name) {
+    return name.toLowerCase().endsWith(".docx");
+  }
 
   function hideMessage() {
     message.className = BASE_CLASSES + " hidden";
@@ -33,34 +52,106 @@ export function initUpload() {
   }
 
   function validateFile(file) {
-    if (!file) return "Please choose a .docx file to upload.";
-    if (!file.name.toLowerCase().endsWith(".docx")) return "Only .docx files are supported.";
+    if (!file) return "Please choose a file to upload.";
+    if (!isDocxName(file.name) && !isTextName(file.name))
+      return "Unsupported file type. Upload .docx, .txt, .pro, or .cho.";
     if (file.size === 0) return "The selected file is empty.";
     if (file.size > MAX_UPLOAD_BYTES) return "File is too large. The maximum size is 10 MB.";
     return null;
   }
 
-  function updateDropzone(file) {
-    if (!file) {
+  function validateFiles(files) {
+    if (files.length > MAX_BINDER_FILES)
+      return `Too many files. The maximum is ${MAX_BINDER_FILES}.`;
+    let total = 0;
+    for (const file of files) {
+      if (!isDocxName(file.name)) return "The binder accepts .docx files only.";
+      if (file.size === 0) return "One of the selected files is empty.";
+      total += file.size;
+    }
+    if (total > MAX_BINDER_TOTAL_BYTES)
+      return "Files are too large. The combined maximum is 40 MB.";
+    return null;
+  }
+
+  function selectedFiles() {
+    return [...fileInput.files];
+  }
+
+  function updateDropzone(files) {
+    if (!files || files.length === 0) {
       dropzoneText.innerHTML = DEFAULT_DROPZONE_HTML;
       return;
     }
     dropzoneText.innerHTML =
       `<span class="font-medium text-slate-800 dark:text-slate-200"></span>` +
       `<span class="block text-xs text-muted-light dark:text-muted"></span>`;
-    dropzoneText.firstChild.textContent = file.name;
-    dropzoneText.lastChild.textContent = formatBytes(file.size);
+    if (files.length === 1) {
+      dropzoneText.firstChild.textContent = files[0].name;
+      dropzoneText.lastChild.textContent = formatBytes(files[0].size);
+      return;
+    }
+    const total = files.reduce((sum, file) => sum + file.size, 0);
+    dropzoneText.firstChild.textContent = `${files.length} files selected`;
+    dropzoneText.lastChild.textContent = formatBytes(total);
+  }
+
+  function selectedFormat() {
+    return form.querySelector('input[name="format"]:checked')?.value || "docx";
+  }
+
+  function showPreview(from, to, text) {
+    message.className = BASE_CLASSES + " " + OK_CLASSES;
+    message.replaceChildren();
+
+    const heading = document.createElement("div");
+    heading.className = "mb-2 font-semibold";
+    heading.textContent = `Preview: ${from} to ${to}`;
+    message.appendChild(heading);
+
+    const pre = document.createElement("pre");
+    pre.className = "overflow-x-auto whitespace-pre font-mono text-xs";
+    pre.textContent = text;
+    message.appendChild(pre);
+  }
+
+  function runPreview() {
+    if (textPreviewSource === null) return;
+    if (currentKey.value === targetKey.value) {
+      hideMessage();
+      return;
+    }
+    try {
+      const result = isChordProText(textPreviewSource)
+        ? transposeChordProText(textPreviewSource, currentKey.value, targetKey.value)
+        : transposeText(textPreviewSource, currentKey.value, targetKey.value);
+      showPreview(result.from, result.to, result.text);
+    } catch (err) {
+      if (err instanceof InvalidKeyError) show("error", err.message);
+    }
   }
 
   fileInput.addEventListener("change", () => {
     hideMessage();
-    const file = fileInput.files[0];
-    updateDropzone(file);
-    const error = validateFile(file);
-    if (file && error) {
+    textPreviewSource = null;
+    const files = selectedFiles();
+    if (files.length === 0) {
+      updateDropzone(null);
+      return;
+    }
+    const error = files.length > 1 ? validateFiles(files) : validateFile(files[0]);
+    if (error) {
       show("error", error);
       fileInput.value = "";
       updateDropzone(null);
+      return;
+    }
+    updateDropzone(files);
+    if (files.length === 1 && isTextName(files[0].name)) {
+      files[0].text().then((content) => {
+        textPreviewSource = content;
+        runPreview();
+      });
     }
   });
 
@@ -77,10 +168,10 @@ export function initUpload() {
     })
   );
   dropzone.addEventListener("drop", (event) => {
-    const file = event.dataTransfer?.files?.[0];
-    if (!file) return;
+    const dropped = [...(event.dataTransfer?.files ?? [])];
+    if (dropped.length === 0) return;
     const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
+    dropped.forEach((file) => dataTransfer.items.add(file));
     fileInput.files = dataTransfer.files;
     fileInput.dispatchEvent(new Event("change"));
   });
@@ -89,7 +180,11 @@ export function initUpload() {
     const from = currentKey.value;
     currentKey.value = targetKey.value;
     targetKey.value = from;
+    runPreview();
   });
+
+  currentKey.addEventListener("change", runPreview);
+  targetKey.addEventListener("change", runPreview);
 
   function showTransposeResult(from, to, changesRaw) {
     message.className = BASE_CLASSES + " " + OK_CLASSES;
@@ -130,6 +225,15 @@ export function initUpload() {
     message.appendChild(table);
   }
 
+  function showBinderResult(count) {
+    message.className = BASE_CLASSES + " " + OK_CLASSES;
+    message.replaceChildren();
+    const heading = document.createElement("div");
+    heading.className = "font-semibold";
+    heading.textContent = `Binder created from ${count} files`;
+    message.appendChild(heading);
+  }
+
   function parseDownloadFilename(disposition, fallback) {
     const extendedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
     if (extendedMatch) {
@@ -150,6 +254,38 @@ export function initUpload() {
     return fallback;
   }
 
+  function textOutputFormat(name) {
+    if (selectedFormat() === "pdf") return "pdf";
+    return name.toLowerCase().endsWith(".txt") ? "txt" : "chordpro";
+  }
+
+  function buildRequest(files) {
+    if (files.length > 1) {
+      const data = new FormData();
+      data.append("current_key", currentKey.value);
+      data.append("target_key", targetKey.value);
+      files.forEach((file) => data.append("files", file));
+      return { endpoint: "/binder", body: data, multi: true, fallback: "chord_binder.pdf" };
+    }
+    const file = files[0];
+    if (isTextName(file.name)) {
+      const format = textOutputFormat(file.name);
+      const data = new FormData();
+      data.append("current_key", currentKey.value);
+      data.append("target_key", targetKey.value);
+      data.append("file", file);
+      data.append("format", format);
+      const ext = format === "pdf" ? "pdf" : format === "txt" ? "txt" : "pro";
+      return { endpoint: "/transpose-text", body: data, multi: false, fallback: `transposed.${ext}` };
+    }
+    return {
+      endpoint: "/transpose",
+      body: new FormData(form),
+      multi: false,
+      fallback: `transposed.${selectedFormat()}`,
+    };
+  }
+
   function setLoading(loading) {
     submit.disabled = loading;
     spinner.classList.toggle("hidden", !loading);
@@ -160,7 +296,13 @@ export function initUpload() {
     event.preventDefault();
     hideMessage();
 
-    const fileError = validateFile(fileInput.files[0]);
+    const files = selectedFiles();
+    const fileError =
+      files.length === 0
+        ? "Please choose a file to upload."
+        : files.length > 1
+          ? validateFiles(files)
+          : validateFile(files[0]);
     if (fileError) {
       show("error", fileError);
       return;
@@ -173,7 +315,8 @@ export function initUpload() {
     setLoading(true);
 
     try {
-      const response = await fetch("/transpose", { method: "POST", body: new FormData(form) });
+      const request = buildRequest(files);
+      const response = await fetch(request.endpoint, { method: "POST", body: request.body });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({ error: "Something went wrong." }));
@@ -186,8 +329,7 @@ export function initUpload() {
       const changes = decodeURIComponent(response.headers.get("X-Transpose-Changes") || "none");
 
       const disposition = response.headers.get("Content-Disposition") || "";
-      const selectedFormat = form.querySelector('input[name="format"]:checked')?.value || "docx";
-      const filename = parseDownloadFilename(disposition, `transposed.${selectedFormat}`);
+      const filename = parseDownloadFilename(disposition, request.fallback);
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -199,7 +341,11 @@ export function initUpload() {
       link.remove();
       URL.revokeObjectURL(url);
 
-      showTransposeResult(from, to, changes);
+      if (request.multi) {
+        showBinderResult(files.length);
+      } else {
+        showTransposeResult(from, to, changes);
+      }
     } catch (err) {
       show("error", "Network error. Please try again.");
     } finally {
