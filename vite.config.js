@@ -23,5 +23,17 @@ export default defineConfig({
     root: resolve(__dirname),
     environment: "jsdom",
     include: ["src/js/**/*.test.js"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["src/js/**/*.js"],
+      exclude: ["src/js/**/*.test.js"],
+      thresholds: {
+        statements: 99,
+        branches: 98,
+        functions: 100,
+        lines: 99,
+      },
+    },
   },
 });

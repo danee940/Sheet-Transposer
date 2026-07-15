@@ -110,4 +110,67 @@ describe("piano and note spelling", () => {
   it("rejects non-chord tokens", () => {
     expect(parseChordSymbol("Chorus:")).toBeNull();
   });
+
+  it("defaults unrecognised qualities to major", () => {
+    expect(classifyQuality("(4)")).toBe("maj");
+  });
+
+  it("classifies minor ninth and minor sixth", () => {
+    expect(classifyQuality("m9")).toBe("min9");
+    expect(classifyQuality("m6")).toBe("min6");
+  });
+
+  it("classifies dominant ninth", () => {
+    expect(classifyQuality("9")).toBe("dom9");
+  });
+
+  it("spells German chords using the German spelling table", () => {
+    expect(chordNotes(parseChordSymbol("H", true))).toEqual(["H", "Dis", "Fis"]);
+  });
+
+  it("does not duplicate a bass note already present in the chord", () => {
+    expect(chordNotes(parseChordSymbol("C/E"))).toEqual(["C", "E", "G"]);
+  });
+
+  it("prepends a bass note that is outside the chord tones", () => {
+    expect(chordNotes(parseChordSymbol("C/D"))).toEqual(["D", "C", "E", "G"]);
+  });
+
+  it("builds a movable minor-seventh barre", () => {
+    expect(lookupShape(parseChordSymbol("Bbm7"), "guitar").frets).toEqual([-1, 1, 3, 1, 2, 1]);
+  });
+
+  it("builds a movable major-seventh barre", () => {
+    expect(lookupShape(parseChordSymbol("Bbmaj7"), "guitar").frets).toEqual([-1, 1, 3, 2, 3, 1]);
+  });
+
+  it("returns null for an empty core", () => {
+    expect(parseChordSymbol("()")).toBeNull();
+  });
+
+  it("returns null when the root cannot be matched", () => {
+    expect(parseChordSymbol("7")).toBeNull();
+  });
+
+  it("parses a slash bass note", () => {
+    const chord = parseChordSymbol("C/G");
+    expect(chord.bassName).toBe("G");
+    expect(chord.bassSemitone).toBe(7);
+  });
+
+  it("uses the maj interval fallback for an unknown family in chordNotes", () => {
+    expect(chordNotes({ family: "unknown", rootSemitone: 0, bassSemitone: null, german: false })).toEqual([
+      "C",
+      "E",
+      "G",
+    ]);
+  });
+
+  it("returns null when looking up a null chord", () => {
+    expect(lookupShape(null, "guitar")).toBeNull();
+  });
+
+  it("returns null for an unsupported ukulele barre chord", () => {
+    expect(lookupShape(parseChordSymbol("C#"), "ukulele")).toBeNull();
+  });
 });

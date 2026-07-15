@@ -55,4 +55,28 @@ describe("buildInteractiveOutput round-trip", () => {
     expect(buttons.map((button) => button.textContent)).toEqual(["(C)", "Am,"]);
     expect(buttons.map((button) => button.dataset.chord)).toEqual(["C", "Am"]);
   });
+
+  it("keeps non-chord tokens on a chord line as plain text", () => {
+    const text = "C  Verse:  G";
+    expect(stripToPlainText(text)).toBe(text);
+    expect(chordButtons(text).map((button) => button.dataset.chord)).toEqual(["C", "G"]);
+  });
+
+  it("leaves non-chord bracketed spans untouched", () => {
+    const text = "[Chorus] the words [zzz] more";
+    expect(stripToPlainText(text)).toBe(text);
+    expect(chordButtons(text)).toHaveLength(0);
+  });
+
+  it("invokes the activation callback when a chord button is clicked", () => {
+    const container = document.createElement("div");
+    let activated = null;
+    container.appendChild(
+      buildInteractiveOutput("C G", (button) => {
+        activated = button.dataset.chord;
+      })
+    );
+    container.querySelector("button.chord-token").dispatchEvent(new Event("click"));
+    expect(activated).toBe("C");
+  });
 });
