@@ -1,5 +1,5 @@
 services:
-  sheet-transposer:
+  chord-transposer:
     build: .
     ports:
       - "8080:8080"
