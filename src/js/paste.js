@@ -1,4 +1,27 @@
 import { MODE_ACTIVE_CLASSES, MODE_INACTIVE_CLASSES } from "./dom.js";
+import {
+  chordProToPlain,
+  InvalidKeyError,
+  isChordProText,
+  textToNashville,
+  transposeChordProText,
+  transposeChordProTextBySemitones,
+  transposeText,
+  transposeTextBySemitones,
+} from "./transpose/index.js";
+
+function semitoneLabel(count, useFlats) {
+  const accidental = useFlats ? "♭" : "♯";
+  if (count === 0) return `No change (${accidental})`;
+  const sign = count > 0 ? "+" : "−";
+  const magnitude = Math.abs(count);
+  const unit = magnitude === 1 ? "semitone" : "semitones";
+  return `${sign}${magnitude} ${unit} (${accidental})`;
+}
+
+function mapChanges(changes) {
+  return changes.map(([from, to]) => ({ from, to }));
+}
 
 export function initPaste() {
   const textInput = document.getElementById("text_input");
@@ -43,7 +66,6 @@ export function initPaste() {
   let useFlats = false;
   let outputFormat = "chordpro";
   let transposeTimer = null;
-  let requestToken = 0;
 
   function setTextStatus(text) {
     textStatus.textContent = text;
@@ -116,19 +138,44 @@ export function initPaste() {
     runTextTranspose();
   }
 
-  function buildRequestBody(text) {
+  function maybePlain(text) {
+    return outputFormat === "plain" ? chordProToPlain(text) : text;
+  }
+
+  function computeResult(text) {
     if (transposeMode === "nashville") {
-      return { text, tonic_key: textCurrentKey.value };
+      const result = textToNashville(text, textCurrentKey.value);
+      return { text: result.text, tonic: result.tonic };
     }
+
+    const chordpro = isChordProText(text);
+
     if (transposeMode === "semitone") {
-      return { text, semitones, notation: useFlats ? "flat" : "sharp", output_format: outputFormat };
+      const result = chordpro
+        ? transposeChordProTextBySemitones(text, semitones, useFlats)
+        : transposeTextBySemitones(text, semitones, useFlats);
+      const data = {
+        text: chordpro ? maybePlain(result.text) : result.text,
+        semitones,
+        label: semitoneLabel(semitones, useFlats),
+        notation: useFlats ? "flat" : "sharp",
+        changes: mapChanges(result.changes),
+      };
+      if (chordpro) data.format = "chordpro";
+      return data;
     }
-    return {
-      text,
-      current_key: textCurrentKey.value,
-      target_key: textTargetKey.value,
-      output_format: outputFormat,
+
+    const result = chordpro
+      ? transposeChordProText(text, textCurrentKey.value, textTargetKey.value)
+      : transposeText(text, textCurrentKey.value, textTargetKey.value);
+    const data = {
+      text: chordpro ? maybePlain(result.text) : result.text,
+      from: result.from,
+      to: result.to,
+      changes: mapChanges(result.changes),
     };
+    if (chordpro) data.format = "chordpro";
+    return data;
   }
 
   function summariseResult(data) {
@@ -142,7 +189,7 @@ export function initPaste() {
       : `${label} · no chords found to change`;
   }
 
-  async function runTextTranspose() {
+  function runTextTranspose() {
     const text = textInput.value;
     if (!text.trim()) {
       textOutput.textContent = "";
@@ -162,33 +209,20 @@ export function initPaste() {
       return;
     }
 
-    const token = ++requestToken;
-    setTextStatus("Transposing…");
-
-    const endpoint = transposeMode === "nashville" ? "/nashville-text" : "/transpose-text";
-
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildRequestBody(text)),
-      });
-      if (token !== requestToken) return;
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setTextStatus(data.error || "Something went wrong.");
-        return;
-      }
-
+      const data = computeResult(text);
       const isChordPro = data.format === "chordpro" && transposeMode !== "nashville";
       chordproFormatToggle.classList.toggle("hidden", !isChordPro);
 
       textOutput.textContent = data.text;
       textCopy.disabled = !data.text;
       setTextStatus(summariseResult(data));
-    } catch {
-      if (token === requestToken) setTextStatus("Network error. Please try again.");
+    } catch (error) {
+      if (error instanceof InvalidKeyError) {
+        setTextStatus(error.message);
+      } else {
+        setTextStatus("Something went wrong.");
+      }
     }
   }
 

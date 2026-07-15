@@ -1,0 +1,1443 @@
+[
+  {
+    "description": "by-key basic major",
+    "mode": "key",
+    "input": "C G Am F",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A Bm G",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Am",
+          "Bm"
+        ],
+        [
+          "C",
+          "D"
+        ],
+        [
+          "F",
+          "G"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key lyrics untouched",
+    "mode": "key",
+    "input": "C G\nThese are the lyrics",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A\nThese are the lyrics",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key blank lines and structure",
+    "mode": "key",
+    "input": "C G\n\nAm F\n",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A\n\nBm G\n",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Am",
+          "Bm"
+        ],
+        [
+          "C",
+          "D"
+        ],
+        [
+          "F",
+          "G"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key no trailing newline",
+    "mode": "key",
+    "input": "C G",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key crlf preserved",
+    "mode": "key",
+    "input": "C G\r\nAm F\r\n",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A\r\nBm G\r\n",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Am",
+          "Bm"
+        ],
+        [
+          "C",
+          "D"
+        ],
+        [
+          "F",
+          "G"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key lone cr preserved",
+    "mode": "key",
+    "input": "C G\r",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A\r",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key vertical tab not newline",
+    "mode": "key",
+    "input": "some\u000blyric",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "some\u000blyric",
+      "from": "C",
+      "to": "D",
+      "changes": []
+    }
+  },
+  {
+    "description": "by-key empty text",
+    "mode": "key",
+    "input": "",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "",
+      "from": "C",
+      "to": "D",
+      "changes": []
+    }
+  },
+  {
+    "description": "by-key flat target spelling",
+    "mode": "key",
+    "input": "C D",
+    "params": {
+      "current_key": "C",
+      "target_key": "Eb"
+    },
+    "expected": {
+      "text": "EbF",
+      "from": "C",
+      "to": "Eb",
+      "changes": [
+        [
+          "C",
+          "Eb"
+        ],
+        [
+          "D",
+          "F"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key minor keys",
+    "mode": "key",
+    "input": "Am Dm E7 Am",
+    "params": {
+      "current_key": "Am",
+      "target_key": "Em"
+    },
+    "expected": {
+      "text": "Em Am B7 Em",
+      "from": "Am",
+      "to": "Em",
+      "changes": [
+        [
+          "Am",
+          "Em"
+        ],
+        [
+          "Dm",
+          "Am"
+        ],
+        [
+          "E7",
+          "B7"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key slash chords",
+    "mode": "key",
+    "input": "C/E  G/B",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D/F# A/C#",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C/E",
+          "D/F#"
+        ],
+        [
+          "G/B",
+          "A/C#"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key no-op same key",
+    "mode": "key",
+    "input": "C G Am F",
+    "params": {
+      "current_key": "C",
+      "target_key": "C"
+    },
+    "expected": {
+      "text": "C G Am F",
+      "from": "C",
+      "to": "C",
+      "changes": []
+    }
+  },
+  {
+    "description": "by-key enharmonic respell no shift",
+    "mode": "key",
+    "input": "C# F# G#m",
+    "params": {
+      "current_key": "C#",
+      "target_key": "Db"
+    },
+    "expected": {
+      "text": "Db Gb Abm",
+      "from": "C#",
+      "to": "Db",
+      "changes": [
+        [
+          "C#",
+          "Db"
+        ],
+        [
+          "F#",
+          "Gb"
+        ],
+        [
+          "G#m",
+          "Abm"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key section label line",
+    "mode": "key",
+    "input": "REF: C G Am",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "REF: D A Bm",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Am",
+          "Bm"
+        ],
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key decoration parens label",
+    "mode": "key",
+    "input": "(Vége: Es B/d F/c B )",
+    "params": {
+      "current_key": "Es",
+      "target_key": "F"
+    },
+    "expected": {
+      "text": "(Vége: F  C/E G/D C )",
+      "from": "Es",
+      "to": "F",
+      "changes": [
+        [
+          "B",
+          "C"
+        ],
+        [
+          "B/d",
+          "C/E"
+        ],
+        [
+          "Es",
+          "F"
+        ],
+        [
+          "F/c",
+          "G/D"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key spacing preserved shrink",
+    "mode": "key",
+    "input": "C#  G",
+    "params": {
+      "current_key": "C#",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D   G#",
+      "from": "C#",
+      "to": "D",
+      "changes": [
+        [
+          "C#",
+          "D"
+        ],
+        [
+          "G",
+          "G#"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key spacing preserved grow",
+    "mode": "key",
+    "input": "C   G",
+    "params": {
+      "current_key": "C",
+      "target_key": "Db"
+    },
+    "expected": {
+      "text": "Db  Ab",
+      "from": "C",
+      "to": "Db",
+      "changes": [
+        [
+          "C",
+          "Db"
+        ],
+        [
+          "G",
+          "Ab"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key duplicate lines dedup changes",
+    "mode": "key",
+    "input": "C G Am F\nC G Am F",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A Bm G\nD A Bm G",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Am",
+          "Bm"
+        ],
+        [
+          "C",
+          "D"
+        ],
+        [
+          "F",
+          "G"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key quality chars preserved",
+    "mode": "key",
+    "input": "Cmaj7 Am7 Dm7 G7sus4",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "Dmaj7 Bm7 Em7 A7sus4",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Am7",
+          "Bm7"
+        ],
+        [
+          "Cmaj7",
+          "Dmaj7"
+        ],
+        [
+          "Dm7",
+          "Em7"
+        ],
+        [
+          "G7sus4",
+          "A7sus4"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key dim aug sus add",
+    "mode": "key",
+    "input": "Cadd9 Bdim7 Caug Gsus4",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "Dadd9 C#dim7Daug Asus4",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "Bdim7",
+          "C#dim7"
+        ],
+        [
+          "Cadd9",
+          "Dadd9"
+        ],
+        [
+          "Caug",
+          "Daug"
+        ],
+        [
+          "Gsus4",
+          "Asus4"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key degree quality symbols",
+    "mode": "key",
+    "input": "C°7 Dø7 Emaj7",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D°7 Eø7 F#maj7",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C°7",
+          "D°7"
+        ],
+        [
+          "Dø7",
+          "Eø7"
+        ],
+        [
+          "Emaj7",
+          "F#maj7"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key trailing ellipsis",
+    "mode": "key",
+    "input": "B…",
+    "params": {
+      "current_key": "C",
+      "target_key": "Db"
+    },
+    "expected": {
+      "text": "C…",
+      "from": "C",
+      "to": "Db",
+      "changes": [
+        [
+          "B…",
+          "C…"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key german H stays",
+    "mode": "key",
+    "input": "H Es B Cis",
+    "params": {
+      "current_key": "H",
+      "target_key": "C"
+    },
+    "expected": {
+      "text": "C E  H D  ",
+      "from": "H",
+      "to": "C",
+      "changes": [
+        [
+          "B",
+          "H"
+        ],
+        [
+          "Cis",
+          "D"
+        ],
+        [
+          "Es",
+          "E"
+        ],
+        [
+          "H",
+          "C"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key german sheet to flat",
+    "mode": "key",
+    "input": "H C D",
+    "params": {
+      "current_key": "C",
+      "target_key": "Es"
+    },
+    "expected": {
+      "text": "D EsF",
+      "from": "C",
+      "to": "Es",
+      "changes": [
+        [
+          "C",
+          "Es"
+        ],
+        [
+          "D",
+          "F"
+        ],
+        [
+          "H",
+          "D"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key german As Des detection",
+    "mode": "key",
+    "input": "As Des Ges",
+    "params": {
+      "current_key": "Ab",
+      "target_key": "A"
+    },
+    "expected": {
+      "text": "A  D   G  ",
+      "from": "Ab",
+      "to": "A",
+      "changes": [
+        [
+          "As",
+          "A"
+        ],
+        [
+          "Des",
+          "D"
+        ],
+        [
+          "Ges",
+          "G"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key english to german target",
+    "mode": "key",
+    "input": "C G Am F",
+    "params": {
+      "current_key": "C",
+      "target_key": "Es"
+    },
+    "expected": {
+      "text": "EbBbCm Ab",
+      "from": "C",
+      "to": "Es",
+      "changes": [
+        [
+          "Am",
+          "Cm"
+        ],
+        [
+          "C",
+          "Eb"
+        ],
+        [
+          "F",
+          "Ab"
+        ],
+        [
+          "G",
+          "Bb"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "by-key german Fis Gis",
+    "mode": "key",
+    "input": "Fis Cis Gis",
+    "params": {
+      "current_key": "Fis",
+      "target_key": "G"
+    },
+    "expected": {
+      "text": "G   D   A  ",
+      "from": "Fis",
+      "to": "G",
+      "changes": [
+        [
+          "Cis",
+          "D"
+        ],
+        [
+          "Fis",
+          "G"
+        ],
+        [
+          "Gis",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone up sharp",
+    "mode": "semitones",
+    "input": "C G Am F",
+    "params": {
+      "semitones": 2,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "D A Bm G",
+      "semitones": 2,
+      "changes": [
+        [
+          "Am",
+          "Bm"
+        ],
+        [
+          "C",
+          "D"
+        ],
+        [
+          "F",
+          "G"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone up flat",
+    "mode": "semitones",
+    "input": "C G Am F",
+    "params": {
+      "semitones": 1,
+      "use_flats": true
+    },
+    "expected": {
+      "text": "DbAbBbmGb",
+      "semitones": 1,
+      "changes": [
+        [
+          "Am",
+          "Bbm"
+        ],
+        [
+          "C",
+          "Db"
+        ],
+        [
+          "F",
+          "Gb"
+        ],
+        [
+          "G",
+          "Ab"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone negative wraps",
+    "mode": "semitones",
+    "input": "C",
+    "params": {
+      "semitones": -1,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "B",
+      "semitones": 11,
+      "changes": [
+        [
+          "C",
+          "B"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone zero no change",
+    "mode": "semitones",
+    "input": "C G Am F",
+    "params": {
+      "semitones": 0,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "C G Am F",
+      "semitones": 0,
+      "changes": []
+    }
+  },
+  {
+    "description": "semitone beyond octave wraps",
+    "mode": "semitones",
+    "input": "C",
+    "params": {
+      "semitones": 13,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "C#",
+      "semitones": 1,
+      "changes": [
+        [
+          "C",
+          "C#"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone empty text",
+    "mode": "semitones",
+    "input": "",
+    "params": {
+      "semitones": 3,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "",
+      "semitones": 3,
+      "changes": []
+    }
+  },
+  {
+    "description": "semitone flat db",
+    "mode": "semitones",
+    "input": "C",
+    "params": {
+      "semitones": 1,
+      "use_flats": true
+    },
+    "expected": {
+      "text": "Db",
+      "semitones": 1,
+      "changes": [
+        [
+          "C",
+          "Db"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone sharp cs",
+    "mode": "semitones",
+    "input": "C",
+    "params": {
+      "semitones": 1,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "C#",
+      "semitones": 1,
+      "changes": [
+        [
+          "C",
+          "C#"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone lyrics untouched",
+    "mode": "semitones",
+    "input": "C G\nThese are the lyrics",
+    "params": {
+      "semitones": 2,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "D A\nThese are the lyrics",
+      "semitones": 2,
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone german detected",
+    "mode": "semitones",
+    "input": "H",
+    "params": {
+      "semitones": 1,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "C",
+      "semitones": 1,
+      "changes": [
+        [
+          "H",
+          "C"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone slash sharp",
+    "mode": "semitones",
+    "input": "C/E G/B",
+    "params": {
+      "semitones": 3,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "D#/GA#/D",
+      "semitones": 3,
+      "changes": [
+        [
+          "C/E",
+          "D#/G"
+        ],
+        [
+          "G/B",
+          "A#/D"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "semitone quality symbols flat",
+    "mode": "semitones",
+    "input": "C°7 Dø7",
+    "params": {
+      "semitones": 3,
+      "use_flats": true
+    },
+    "expected": {
+      "text": "Eb°7Fø7",
+      "semitones": 3,
+      "changes": [
+        [
+          "C°7",
+          "Eb°7"
+        ],
+        [
+          "Dø7",
+          "Fø7"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro inline chords",
+    "mode": "chordpro-key",
+    "input": "[C]Amazing [G]grace",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "[D]Amazing [A]grace",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro non-chord bracket verbatim",
+    "mode": "chordpro-key",
+    "input": "[Verse 1]\n[C]hello",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "[Verse 1]\n[D]hello",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro slash",
+    "mode": "chordpro-key",
+    "input": "[G/B]word",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "[A/C#]word",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "G/B",
+          "A/C#"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro multiline lyrics",
+    "mode": "chordpro-key",
+    "input": "[C]Line one\nplain lyric\n[G]Line two",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "[D]Line one\nplain lyric\n[A]Line two",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro german",
+    "mode": "chordpro-key",
+    "input": "[H]word",
+    "params": {
+      "current_key": "H",
+      "target_key": "C"
+    },
+    "expected": {
+      "text": "[C]word",
+      "from": "H",
+      "to": "C",
+      "changes": [
+        [
+          "H",
+          "C"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro quality symbols",
+    "mode": "chordpro-key",
+    "input": "[C°7]a [Dø7]b [Gmaj7]c",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "[D°7]a [Eø7]b [Amaj7]c",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C°7",
+          "D°7"
+        ],
+        [
+          "Dø7",
+          "Eø7"
+        ],
+        [
+          "Gmaj7",
+          "Amaj7"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro semitone up",
+    "mode": "chordpro-semitones",
+    "input": "[C]Amazing [G]grace",
+    "params": {
+      "semitones": 2,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "[D]Amazing [A]grace",
+      "semitones": 2,
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro semitone flat",
+    "mode": "chordpro-semitones",
+    "input": "[C]x",
+    "params": {
+      "semitones": 1,
+      "use_flats": true
+    },
+    "expected": {
+      "text": "[Db]x",
+      "semitones": 1,
+      "changes": [
+        [
+          "C",
+          "Db"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro semitone negative",
+    "mode": "chordpro-semitones",
+    "input": "[C]x",
+    "params": {
+      "semitones": -1,
+      "use_flats": false
+    },
+    "expected": {
+      "text": "[B]x",
+      "semitones": 11,
+      "changes": [
+        [
+          "C",
+          "B"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro plain output",
+    "mode": "chordpro-key-plain",
+    "input": "[C]Amazing [G]grace",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D A",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro plain multiline",
+    "mode": "chordpro-key-plain",
+    "input": "[C]a\n[G]b\n",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "D\nA\n",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "chordpro plain with non-chord bracket",
+    "mode": "chordpro-key-plain",
+    "input": "[Verse]\n[C]x [G]y",
+    "params": {
+      "current_key": "C",
+      "target_key": "D"
+    },
+    "expected": {
+      "text": "Verse\nD A",
+      "from": "C",
+      "to": "D",
+      "changes": [
+        [
+          "C",
+          "D"
+        ],
+        [
+          "G",
+          "A"
+        ]
+      ]
+    }
+  },
+  {
+    "description": "to-plain basic",
+    "mode": "to-plain",
+    "input": "[C]Amazing [G]grace",
+    "params": {},
+    "expected": {
+      "text": "C G"
+    }
+  },
+  {
+    "description": "to-plain line structure",
+    "mode": "to-plain",
+    "input": "[C]a\n[G]b\n",
+    "params": {},
+    "expected": {
+      "text": "C\nG\n"
+    }
+  },
+  {
+    "description": "to-plain empty leading line",
+    "mode": "to-plain",
+    "input": "\n[C]x",
+    "params": {},
+    "expected": {
+      "text": "\nC"
+    }
+  },
+  {
+    "description": "detect inline chord",
+    "mode": "is-chordpro",
+    "input": "[C]Amazing [G]grace",
+    "params": {},
+    "expected": {
+      "result": true
+    }
+  },
+  {
+    "description": "detect chord with quality",
+    "mode": "is-chordpro",
+    "input": "[Am7]hello",
+    "params": {},
+    "expected": {
+      "result": true
+    }
+  },
+  {
+    "description": "plain chord line not chordpro",
+    "mode": "is-chordpro",
+    "input": "C G Am F",
+    "params": {},
+    "expected": {
+      "result": false
+    }
+  },
+  {
+    "description": "section label bracket not chordpro",
+    "mode": "is-chordpro",
+    "input": "[Verse 1]",
+    "params": {},
+    "expected": {
+      "result": false
+    }
+  },
+  {
+    "description": "empty not chordpro",
+    "mode": "is-chordpro",
+    "input": "",
+    "params": {},
+    "expected": {
+      "result": false
+    }
+  },
+  {
+    "description": "lyrics not chordpro",
+    "mode": "is-chordpro",
+    "input": "just some lyrics",
+    "params": {},
+    "expected": {
+      "result": false
+    }
+  },
+  {
+    "description": "nashville chord line",
+    "mode": "nashville",
+    "input": "C G Am F",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "1 5 6m 4",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville lyrics untouched",
+    "mode": "nashville",
+    "input": "C G\nthese are lyrics",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "1 5\nthese are lyrics",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville minor tonic",
+    "mode": "nashville",
+    "input": "Am Dm E",
+    "params": {
+      "tonic_key": "Am"
+    },
+    "expected": {
+      "text": "1m 4m 5",
+      "tonic": "Am"
+    }
+  },
+  {
+    "description": "nashville chordpro input",
+    "mode": "nashville",
+    "input": "[C]Amazing [G]grace",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "[1]Amazing [5]grace",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville chordpro non-chord bracket",
+    "mode": "nashville",
+    "input": "[Verse]\n[C]x",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "[Verse]\n[1]x",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville spacing preserved",
+    "mode": "nashville",
+    "input": "  C   G",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "  1   5",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville german tonic",
+    "mode": "nashville",
+    "input": "H Cis",
+    "params": {
+      "tonic_key": "H"
+    },
+    "expected": {
+      "text": "1 2",
+      "tonic": "H"
+    }
+  },
+  {
+    "description": "nashville chromatic degrees",
+    "mode": "nashville",
+    "input": "C Eb F Bb",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "1 b3 4 b7",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville slash",
+    "mode": "nashville",
+    "input": "G/B C/E",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "5/7 1/3",
+      "tonic": "C"
+    }
+  },
+  {
+    "description": "nashville quality preserved",
+    "mode": "nashville",
+    "input": "Cmaj7 Am7 G7sus4",
+    "params": {
+      "tonic_key": "C"
+    },
+    "expected": {
+      "text": "1maj7 6m7 57sus4",
+      "tonic": "C"
+    }
+  }
+]
