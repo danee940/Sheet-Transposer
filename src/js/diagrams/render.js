@@ -10,7 +10,7 @@ import {
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const WHITE_PITCH_CLASSES = [0, 2, 4, 5, 7, 9, 11];
-const BLACK_AFTER_WHITE = { 0: 1, 1: 3, 3: 6, 4: 8, 5: 10 };
+const BLACK_AFTER_WHITE = { 0: 1, 2: 3, 5: 6, 7: 8, 9: 10 };
 
 function svgEl(name, attributes) {
   const node = document.createElementNS(SVG_NS, name);
