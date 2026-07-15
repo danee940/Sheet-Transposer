@@ -73,6 +73,192 @@ FAQ_ITEMS = [
     },
 ]
 
+GUITAR_FAQ_ITEMS = [
+    {
+        "question": "How do I transpose guitar chords to a new key?",
+        "answer": (
+            "Paste your guitar chords, choose the key the song is in, and pick the key you want "
+            "to play in. Every chord shifts by the same interval so the song sounds the same, "
+            "just higher or lower — no upload needed."
+        ),
+    },
+    {
+        "question": "How does the capo finder work?",
+        "answer": (
+            "Tell the capo finder the key you want to hear and it shows which fret to clamp so "
+            "you can keep playing familiar open-chord shapes like C, G, D, A, E, and their "
+            "relative minors while sounding in the key you chose."
+        ),
+    },
+    {
+        "question": "Does it handle slash chords and barre chords?",
+        "answer": (
+            "Yes. Slash chords such as G/B are transposed correctly, and moving to a "
+            "guitar-friendly key often lets you swap awkward barre chords for easier open shapes."
+        ),
+    },
+    {
+        "question": "Which keys are easiest to play on guitar?",
+        "answer": (
+            "Open keys like G, C, D, A, and E sit best under the fingers. Transpose into one of "
+            "those, or use the capo finder, to turn a tricky chart into open shapes."
+        ),
+    },
+    {
+        "question": "Is the guitar chord transposer free?",
+        "answer": (
+            "Yes, it is completely free with no sign-up, and you can transpose as many songs as "
+            "you like."
+        ),
+    },
+]
+
+UKULELE_FAQ_ITEMS = [
+    {
+        "question": "How do I transpose ukulele chords to a new key?",
+        "answer": (
+            "Paste your ukulele chords, set the current key, and pick the target key. The whole "
+            "sheet shifts by the same interval so the melody is unchanged and you keep the same "
+            "chord shapes, just moved to a new key."
+        ),
+    },
+    {
+        "question": "Which keys are best for ukulele?",
+        "answer": (
+            "Ukulele-friendly keys like C, F, G, and A sit comfortably under the fingers. "
+            "Transposing into one of those turns a hard chart into open, singable shapes."
+        ),
+    },
+    {
+        "question": "Will transposing change the chord shapes I know?",
+        "answer": (
+            "Transposing moves every chord by the same interval, so the shapes shift together. "
+            "Choosing a ukulele-friendly target key keeps the shapes easy to play."
+        ),
+    },
+    {
+        "question": "Does it keep chord qualities like sus and 7th chords?",
+        "answer": (
+            "Yes. Chord qualities from simple triads to sus, add, and 7th chords are recognised "
+            "and transposed correctly."
+        ),
+    },
+    {
+        "question": "Is the ukulele chord transposer free?",
+        "answer": (
+            "Yes, it is completely free with no sign-up, and there is nothing to install — it "
+            "runs instantly in your browser."
+        ),
+    },
+]
+
+PIANO_FAQ_ITEMS = [
+    {
+        "question": "How do I transpose piano chords to a new key?",
+        "answer": (
+            "Paste your piano chords, pick the current and target keys, and every chord is "
+            "rewritten in the new key with the sharps or flats that read naturally there."
+        ),
+    },
+    {
+        "question": "Will it choose the right sharp or flat spelling?",
+        "answer": (
+            "Yes. The tool spells each transposed chord with the sharps or flats that match the "
+            "target key, so the result reads correctly on the page."
+        ),
+    },
+    {
+        "question": "Why is there no capo option for piano?",
+        "answer": (
+            "A capo only exists on fretted instruments. On a keyboard the way to make a song "
+            "easier is to choose a written key that lies more comfortably under the hands."
+        ),
+    },
+    {
+        "question": "Does it handle extended and slash chords?",
+        "answer": (
+            "Yes. Extended chords, slash chords, and inversions are all recognised and moved "
+            "correctly to the new key."
+        ),
+    },
+    {
+        "question": "Is the piano chord transposer free?",
+        "answer": (
+            "Yes, it is completely free with no sign-up, and you can transpose as many charts as "
+            "you like."
+        ),
+    },
+]
+
+FILE_FAQ_ITEMS = [
+    {
+        "question": "Which file types can I upload?",
+        "answer": (
+            "You can upload Word (.docx), plain text (.txt), and ChordPro (.pro and .cho) chord "
+            "sheets. Drop several .docx files at once to build a single combined PDF binder."
+        ),
+    },
+    {
+        "question": "Does uploading keep my document formatting?",
+        "answer": (
+            "Yes. For .docx files only the chord names change — fonts, spacing, colours, tables, "
+            "and the overall layout are preserved in the downloaded file."
+        ),
+    },
+    {
+        "question": "Can I download the result as a PDF?",
+        "answer": (
+            "Yes. Choose the PDF output option before transposing to get a ready-to-print PDF, "
+            "or keep the editable file in its original format."
+        ),
+    },
+    {
+        "question": "Are my uploaded files stored anywhere?",
+        "answer": (
+            "No. Your chord sheet is processed to generate the transposed file and is not kept "
+            "after the download is returned."
+        ),
+    },
+    {
+        "question": "Do I have to upload a file to transpose chords?",
+        "answer": (
+            "No. Uploading is only for downloading a transposed document. To transpose on screen, "
+            "paste your chords into the instant transposer instead."
+        ),
+    },
+]
+
+CHART_FAQ_ITEMS = [
+    {
+        "question": "How do I use a chromatic transposition chart?",
+        "answer": (
+            "Find the row for the note you have, then read across to the column for the number "
+            "of semitones you want to move up, and the cell shows the note it becomes."
+        ),
+    },
+    {
+        "question": "How many semitones should I move?",
+        "answer": (
+            "Count the interval between your current and target keys. The same shift applies to "
+            "every chord in the song, so you can convert a whole sheet one chord at a time."
+        ),
+    },
+    {
+        "question": "Do I have to transpose by hand?",
+        "answer": (
+            "No. The chart is a handy reference, but you can paste your chords into the "
+            "transposer above to shift a whole sheet instantly."
+        ),
+    },
+    {
+        "question": "Does the chart cover sharp and flat keys?",
+        "answer": (
+            "The chart uses sharp spellings, and the interactive transposer chooses the correct "
+            "sharp or flat spelling for whichever target key you pick."
+        ),
+    },
+]
+
 HOWTO_STEPS = [
     {
         "name": "Add your chords",
@@ -140,6 +326,8 @@ INSTRUMENTS = [
         "h1": "Guitar chord transposer",
         "preselect_from": "C",
         "preselect_to": "G",
+        "preselect_instrument": "guitar",
+        "faq_items": GUITAR_FAQ_ITEMS,
         "show_capo": True,
         "intro_paragraphs": [
             "Change the key of any guitar song and keep playing the shapes you already know. "
@@ -167,6 +355,8 @@ INSTRUMENTS = [
         "h1": "Ukulele chord transposer",
         "preselect_from": "C",
         "preselect_to": "G",
+        "preselect_instrument": "ukulele",
+        "faq_items": UKULELE_FAQ_ITEMS,
         "show_capo": False,
         "intro_paragraphs": [
             "Transpose ukulele songs to a more comfortable key in seconds. Paste your chords, "
@@ -194,6 +384,8 @@ INSTRUMENTS = [
         "h1": "Piano chord transposer",
         "preselect_from": "C",
         "preselect_to": "D",
+        "preselect_instrument": "piano",
+        "faq_items": PIANO_FAQ_ITEMS,
         "show_capo": False,
         "intro_paragraphs": [
             "Move a piano chart to any key and let the tool handle the spelling. Paste your "
@@ -297,8 +489,8 @@ def _howto_jsonld(name):
     }
 
 
-def _faq_jsonld():
-    """Return a FAQPage structured-data block built from the shared FAQ list."""
+def _faq_jsonld(faq_items=FAQ_ITEMS):
+    """Return a FAQPage structured-data block built from the given FAQ list."""
     return {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -308,7 +500,7 @@ def _faq_jsonld():
                 "name": item["question"],
                 "acceptedAnswer": {"@type": "Answer", "text": item["answer"]},
             }
-            for item in FAQ_ITEMS
+            for item in faq_items
         ],
     }
 
@@ -381,6 +573,7 @@ def _key_pair_page(from_key, to_key):
         "delta_up": delta_up,
         "example_from": example_from,
         "example_to": example_to,
+        "faq_items": FAQ_ITEMS,
         "show_capo": True,
         "breadcrumbs": breadcrumbs,
         "jsonld": [
@@ -408,11 +601,13 @@ def _instrument_page(instrument):
         "canonical": f"{SITE_URL}{path}",
         "preselect_from": instrument["preselect_from"],
         "preselect_to": instrument["preselect_to"],
+        "preselect_instrument": instrument["preselect_instrument"],
+        "faq_items": instrument["faq_items"],
         "show_capo": instrument["show_capo"],
         "breadcrumbs": breadcrumbs,
         "jsonld": [
             _howto_jsonld(f"How to transpose {instrument['instrument']} chords"),
-            _faq_jsonld(),
+            _faq_jsonld(instrument["faq_items"]),
             _breadcrumb_jsonld(breadcrumbs),
         ],
     }
@@ -438,6 +633,72 @@ def compact_chromatic_chart():
     return chromatic_chart(COMPACT_CHART_SHIFTS)
 
 
+_INTERVAL_QUALITIES = {
+    0: "Perfect unison",
+    1: "Minor second",
+    2: "Major second",
+    3: "Minor third",
+    4: "Major third",
+    5: "Perfect fourth",
+    6: "Tritone",
+    7: "Perfect fifth",
+    8: "Minor sixth",
+    9: "Major sixth",
+    10: "Minor seventh",
+    11: "Major seventh",
+    12: "Perfect octave",
+}
+
+_INTERVAL_EXAMPLES = {
+    0: "C to C",
+    1: "C to C#",
+    2: "C to D",
+    3: "C to Eb",
+    4: "C to E",
+    5: "C to F",
+    6: "C to F#",
+    7: "C to G",
+    8: "C to Ab",
+    9: "C to A",
+    10: "C to Bb",
+    11: "C to B",
+    12: "C to C",
+}
+
+
+def interval_reference():
+    """Return the semitone-to-interval reference rows for the chart page."""
+    return [
+        {
+            "semitones": semitones,
+            "name": _INTERVAL_QUALITIES[semitones],
+            "example": _INTERVAL_EXAMPLES[semitones],
+        }
+        for semitones in range(13)
+    ]
+
+
+_KEY_SIGNATURES = [
+    {"key": "C", "accidentals": "none", "relative_minor": "Am"},
+    {"key": "G", "accidentals": "1 sharp", "relative_minor": "Em"},
+    {"key": "D", "accidentals": "2 sharps", "relative_minor": "Bm"},
+    {"key": "A", "accidentals": "3 sharps", "relative_minor": "F#m"},
+    {"key": "E", "accidentals": "4 sharps", "relative_minor": "C#m"},
+    {"key": "B", "accidentals": "5 sharps", "relative_minor": "G#m"},
+    {"key": "F#", "accidentals": "6 sharps", "relative_minor": "D#m"},
+    {"key": "Db", "accidentals": "5 flats", "relative_minor": "Bbm"},
+    {"key": "Ab", "accidentals": "4 flats", "relative_minor": "Fm"},
+    {"key": "Eb", "accidentals": "3 flats", "relative_minor": "Cm"},
+    {"key": "Bb", "accidentals": "2 flats", "relative_minor": "Gm"},
+    {"key": "F", "accidentals": "1 flat", "relative_minor": "Dm"},
+]
+
+
+def key_signature_reference():
+    """Return the circle-of-fifths key-signature reference rows for the chart page."""
+    return list(_KEY_SIGNATURES)
+
+
 def _chart_page():
     """Build the full page record for the chromatic transposition chart page."""
     path = "/chromatic-chart"
@@ -458,17 +719,57 @@ def _chart_page():
             "move, and the cell shows the note it becomes.",
             "Every shift applies to all twelve notes equally, so once you know the interval "
             "between your current and target keys you can convert a whole chord sheet a chord at "
-            "a time — or paste it into the widget above to do it instantly.",
+            "a time — or paste it into the transposer below to do it instantly.",
         ],
         "canonical": f"{SITE_URL}{path}",
         "preselect_from": "C",
         "preselect_to": "D",
+        "faq_items": CHART_FAQ_ITEMS,
         "show_capo": False,
         "chart": chromatic_chart(list(range(1, 12))),
+        "interval_reference": interval_reference(),
+        "key_signature_reference": key_signature_reference(),
         "breadcrumbs": breadcrumbs,
         "jsonld": [
             _howto_jsonld("How to read the chromatic transposition chart"),
-            _faq_jsonld(),
+            _faq_jsonld(CHART_FAQ_ITEMS),
+            _breadcrumb_jsonld(breadcrumbs),
+        ],
+    }
+
+
+def _file_page():
+    """Build the full page record for the file upload transposer page."""
+    path = "/file-chord-transposer"
+    breadcrumbs = _breadcrumbs("File transposer", path)
+    return {
+        "id": "file_chord_transposer",
+        "path": path,
+        "kind": "file",
+        "title": "File Chord Transposer — Transpose .docx, .txt & ChordPro",
+        "description": (
+            "Upload a chord sheet file and download it transposed to any key. Supports Word "
+            "(.docx), plain text (.txt), and ChordPro (.pro/.cho), with formatting preserved and "
+            "PDF output. Free, no sign-up."
+        ),
+        "h1": "File chord transposer",
+        "intro_paragraphs": [
+            "Transpose a whole chord sheet file at once and download the result. Upload a Word "
+            ".docx, a plain-text .txt, or a ChordPro .pro/.cho file, choose the current and "
+            "target keys, and every chord moves by the same interval so the song is unchanged.",
+            "For .docx files the layout is kept intact — only the chord names change — so you "
+            "get a clean copy ready to print or share. You can also drop several .docx files to "
+            "build one combined PDF binder, or export any upload as a PDF.",
+        ],
+        "canonical": f"{SITE_URL}{path}",
+        "preselect_from": "C",
+        "preselect_to": "D",
+        "faq_items": FILE_FAQ_ITEMS,
+        "show_capo": False,
+        "breadcrumbs": breadcrumbs,
+        "jsonld": [
+            _howto_jsonld("How to transpose a chord sheet file"),
+            _faq_jsonld(FILE_FAQ_ITEMS),
             _breadcrumb_jsonld(breadcrumbs),
         ],
     }
@@ -477,6 +778,7 @@ def _chart_page():
 def landing_pages():
     """Return every server-rendered landing page record in navigation order."""
     pages = [_instrument_page(instrument) for instrument in INSTRUMENTS]
+    pages.append(_file_page())
     pages.append(_chart_page())
     pages.extend(_key_pair_page(from_key, to_key) for from_key, to_key in CURATED_KEY_PAIRS)
     return pages
@@ -488,19 +790,24 @@ def nav_sections():
         {"name": f"{instrument['name']} transposer", "path": f"/{instrument['slug']}"}
         for instrument in INSTRUMENTS
     ]
-    pair_links = [
-        {
-            "name": f"{from_key} to {to_key}",
-            "path": f"/transpose/{_key_slug(from_key)}-to-{_key_slug(to_key)}",
-        }
-        for from_key, to_key in CURATED_KEY_PAIRS
-    ]
+    file_links = [{"name": "File transposer", "path": "/file-chord-transposer"}]
     reference_links = [{"name": "Chromatic chart", "path": "/chromatic-chart"}]
     return [
+        {"heading": "Upload files", "links": file_links},
         {"heading": "By instrument", "links": instrument_links},
-        {"heading": "Popular key changes", "links": pair_links},
         {"heading": "Reference", "links": reference_links},
     ]
+
+
+def nav_columns():
+    """Split the nav sections into two balanced columns for the cross-link hub."""
+    columns = [[], []]
+    counts = [0, 0]
+    for section in nav_sections():
+        target = 0 if counts[0] <= counts[1] else 1
+        columns[target].append(section)
+        counts[target] += len(section["links"])
+    return columns
 
 
 def sitemap_paths():
