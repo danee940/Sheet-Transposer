@@ -29,6 +29,20 @@ docker compose up
 
 Runs the app on `http://localhost:5000` alongside a Gotenberg service for PDF conversion.
 
+## Deploy to Railway
+
+The app needs a companion Gotenberg service for PDF output, so a Railway project
+runs two services:
+
+1. Create a Railway project and add this repository. Railway builds the app from
+   the `Dockerfile` (see `railway.json`) and injects `PORT`.
+2. Add a second service from the Docker image `gotenberg/gotenberg:8`.
+3. On the app service, set `GOTENBERG_URL` to the Gotenberg service's private
+   address, e.g. `http://gotenberg.railway.internal:3000`.
+4. Generate a public domain for the app service. Railway terminates HTTPS.
+
+The `/health` endpoint is used as the deploy healthcheck.
+
 ## Development
 
 ```bash
