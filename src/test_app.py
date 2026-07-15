@@ -309,3 +309,115 @@ def test_transpose_text_by_semitones_rejects_bad_notation(client):
     )
     assert response.status_code == 400
     assert "sharp" in response.get_json()["error"]
+
+
+class TestChordProApi:
+    def test_key_based_chordpro_keeps_brackets(self, client):
+        response = client.post(
+            "/transpose-text",
+            json={"text": "[C]Amazing [G]grace", "current_key": "C", "target_key": "D"},
+        )
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["text"] == "[D]Amazing [A]grace"
+        assert body["format"] == "chordpro"
+
+    def test_key_based_chordpro_plain_output(self, client):
+        response = client.post(
+            "/transpose-text",
+            json={
+                "text": "[C]Amazing [G]grace",
+                "current_key": "C",
+                "target_key": "D",
+                "output_format": "plain",
+            },
+        )
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["text"] == "D A"
+        assert body["format"] == "chordpro"
+
+    def test_key_based_chordpro_invalid_key(self, client):
+        response = client.post(
+            "/transpose-text",
+            json={"text": "[C]x", "current_key": "X", "target_key": "D"},
+        )
+        assert response.status_code == 400
+        assert "not a valid key" in response.get_json()["error"]
+
+    def test_semitone_chordpro_keeps_brackets(self, client):
+        response = client.post(
+            "/transpose-text",
+            json={"text": "[C]Amazing [G]grace", "semitones": 2},
+        )
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["text"] == "[D]Amazing [A]grace"
+        assert body["format"] == "chordpro"
+
+    def test_semitone_chordpro_plain_output(self, client):
+        response = client.post(
+            "/transpose-text",
+            json={"text": "[C]a [G]b", "semitones": 2, "output_format": "plain"},
+        )
+        assert response.status_code == 200
+        assert response.get_json()["text"] == "D A"
+
+    def test_plain_text_has_no_format_field(self, client):
+        response = client.post(
+            "/transpose-text",
+            json={"text": "C G Am F", "current_key": "C", "target_key": "D"},
+        )
+        assert response.status_code == 200
+        assert "format" not in response.get_json()
+
+
+class TestNashvilleApi:
+    def test_converts_chord_line(self, client):
+        response = client.post(
+            "/nashville-text",
+            json={"text": "C G Am F", "tonic_key": "C"},
+        )
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["text"] == "1 5 6m 4"
+        assert body["tonic"] == "C"
+
+    def test_missing_text(self, client):
+        response = client.post("/nashville-text", json={"tonic_key": "C"})
+        assert response.status_code == 400
+        assert "No text" in response.get_json()["error"]
+
+    def test_missing_tonic(self, client):
+        response = client.post("/nashville-text", json={"text": "C G"})
+        assert response.status_code == 400
+        assert "tonic key is required" in response.get_json()["error"]
+
+    def test_invalid_tonic(self, client):
+        response = client.post(
+            "/nashville-text",
+            json={"text": "C G", "tonic_key": "X"},
+        )
+        assert response.status_code == 400
+        assert "not a valid key" in response.get_json()["error"]
+
+    def test_text_too_long(self, client):
+        response = client.post(
+            "/nashville-text",
+            json={"text": "C " * 11_000, "tonic_key": "C"},
+        )
+        assert response.status_code == 400
+        assert "too long" in response.get_json()["error"]
+
+    def test_empty_body(self, client):
+        response = client.post("/nashville-text", data=b"", content_type="application/json")
+        assert response.status_code == 400
+        assert "No text" in response.get_json()["error"]
+
+    def test_chordpro_input(self, client):
+        response = client.post(
+            "/nashville-text",
+            json={"text": "[C]Amazing [G]grace", "tonic_key": "C"},
+        )
+        assert response.status_code == 200
+        assert response.get_json()["text"] == "[1]Amazing [5]grace"

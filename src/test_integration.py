@@ -570,3 +570,24 @@ class TestTranposeTextEndToEnd:
         source = "C   F#  G"
         result, _, _, _ = t.transpose_text(source, "C", "Db")
         assert result.split("\n")[0].startswith("Db")
+
+
+class TestChordProRoundTrip:
+    def test_chordpro_round_trips(self):
+        source = "[C]Amazing [F]grace how [G]sweet the [C]sound"
+        mid, _, _, _ = t.transpose_chordpro_text(source, "C", "G")
+        result, _, _, _ = t.transpose_chordpro_text(mid, "G", "C")
+        assert result == source
+
+    def test_chordpro_lyrics_preserved(self):
+        source = "[C]Amazing [G]grace\nplain lyric line\n[F]how sweet"
+        result, _, _, _ = t.transpose_chordpro_text(source, "C", "D")
+        assert "plain lyric line" in result
+        assert result.startswith("[D]Amazing [A]grace")
+
+    def test_chordpro_to_nashville_and_plain(self):
+        source = "[C]Amazing [G]grace"
+        nashville, tonic = t.text_to_nashville(source, "C")
+        assert nashville == "[1]Amazing [5]grace"
+        assert tonic == "C"
+        assert t._chordpro_to_plain(source) == "C G"

@@ -90,6 +90,10 @@ CHORD_TOKEN_RE = re.compile(
 )
 ROOT_MATCH_RE = re.compile(rf"^({ROOT_PATTERN})(.*)$")
 TOKEN_SPLIT_RE = re.compile(r"(\S+)(\s*)")
+CHORDPRO_BRACKET_RE = re.compile(r"\[([^\]]+)\]")
+
+MAJOR_SCALE_DEGREES = {0: "1", 2: "2", 4: "3", 5: "4", 7: "5", 9: "6", 11: "7"}
+CHROMATIC_DEGREE_NAMES = {1: "b2", 3: "b3", 6: "b5", 8: "b6", 10: "b7"}
 
 
 def _is_minor_suffix(rest):
@@ -608,6 +612,181 @@ def transpose_text_by_semitones(text, semitones, use_flats):
     normalised = semitones % 12
     result, changes = _transpose_text_core(text, normalised, use_flats)
     return result, normalised, changes
+
+
+def is_chordpro_text(text):
+    """Return True if any line contains an inline ChordPro chord like ``[C]``."""
+    for line in text.splitlines():
+        for token in CHORDPRO_BRACKET_RE.findall(line):
+            if CHORD_TOKEN_RE.match(token.strip()):
+                return True
+    return False
+
+
+def _chordpro_uses_german(text):
+    """Return True if any ChordPro bracket token uses German note notation."""
+    for token in CHORDPRO_BRACKET_RE.findall(text):
+        stripped = token.strip()
+        if CHORD_TOKEN_RE.match(stripped) and line_uses_german(stripped):
+            return True
+    return False
+
+
+def _transpose_chordpro_line(line, semitones, spelling, german, changes):
+    """Transpose each bracketed chord token in a line, leaving other content verbatim."""
+
+    def replace(match):
+        token = match.group(1)
+        if not CHORD_TOKEN_RE.match(token.strip()):
+            return match.group(0)
+        transposed = transpose_chord(token, semitones, spelling, german)
+        if transposed != token:
+            changes.add((token, transposed))
+        return f"[{transposed}]"
+
+    return CHORDPRO_BRACKET_RE.sub(replace, line)
+
+
+def _chordpro_to_plain(text):
+    """Strip ChordPro brackets, returning only the chord tokens per line."""
+    result_parts = []
+    for segment in text.splitlines(keepends=True):
+        content = segment.splitlines()[0] if segment.splitlines() else ""
+        ending = segment[len(content) :]
+        tokens = [token.strip() for token in CHORDPRO_BRACKET_RE.findall(content)]
+        result_parts.append(" ".join(tokens) + ending)
+    return "".join(result_parts)
+
+
+def _transpose_chordpro_core(text, semitones, use_flats, german):
+    """Transpose ChordPro chord tokens across all lines, returning (text, changes)."""
+    spelling = choose_spelling(use_flats, german)
+    changes: set[tuple[str, str]] = set()
+    result_parts = []
+    for segment in text.splitlines(keepends=True):
+        content = segment.splitlines()[0] if segment.splitlines() else ""
+        ending = segment[len(content) :]
+        content = _transpose_chordpro_line(content, semitones, spelling, german, changes)
+        result_parts.append(content + ending)
+    return "".join(result_parts), sorted(changes)
+
+
+def transpose_chordpro_text(text, current_key, target_key):
+    """Transpose ChordPro chord tokens and return (text, from_label, to_label, changes)."""
+    current = parse_key(current_key)
+    if current is None:
+        raise InvalidKeyError(f"'{current_key}' is not a valid key.")
+    target = parse_key(target_key)
+    if target is None:
+        raise InvalidKeyError(f"'{target_key}' is not a valid key.")
+
+    current_note, current_minor = current
+    target_note, target_minor = target
+
+    german = _chordpro_uses_german(text)
+    semitones = (key_semitone(target_note, german) - key_semitone(current_note, german)) % 12
+    use_flats = prefers_flats(target_note, target_minor)
+
+    result, changes = _transpose_chordpro_core(text, semitones, use_flats, german)
+
+    from_label = key_label(current_note, current_minor)
+    to_label = key_label(target_note, target_minor)
+
+    return result, from_label, to_label, changes
+
+
+def transpose_chordpro_text_by_semitones(text, semitones, use_flats):
+    """Transpose ChordPro chord tokens by a raw semitone shift.
+
+    Returns ``(text, normalised_semitones, changes)`` mirroring
+    ``transpose_text_by_semitones`` for the plain-text path.
+    """
+    normalised = semitones % 12
+    german = _chordpro_uses_german(text)
+    result, changes = _transpose_chordpro_core(text, normalised, use_flats, german)
+    return result, normalised, changes
+
+
+def note_to_nashville_degree(note, tonic_semitone, german):
+    """Return the Nashville scale-degree string (e.g. '1', '4', 'b7') for a note."""
+    degree = (note_semitone(note, german) - tonic_semitone) % 12
+    if degree in MAJOR_SCALE_DEGREES:
+        return MAJOR_SCALE_DEGREES[degree]
+    return CHROMATIC_DEGREE_NAMES[degree]
+
+
+def chord_to_nashville(chord, tonic_semitone, german):
+    """Convert a chord symbol to its Nashville number, preserving quality and bass."""
+    leading, core, trailing = split_affixes(chord)
+    if core != chord:
+        if not CHORD_TOKEN_RE.match(core):
+            return chord
+        return leading + chord_to_nashville(core, tonic_semitone, german) + trailing
+
+    match = ROOT_MATCH_RE.match(chord)
+    if not match:
+        return chord
+    root, remainder = match.group(1), match.group(2)
+    number = note_to_nashville_degree(root, tonic_semitone, german)
+    if "/" in remainder:
+        before_slash, bass = remainder.split("/", 1)
+        bass_match = ROOT_MATCH_RE.match(bass)
+        if bass_match:
+            bass_number = note_to_nashville_degree(bass_match.group(1), tonic_semitone, german)
+            return number + before_slash + "/" + bass_number + bass_match.group(2)
+    return number + remainder
+
+
+def _nashville_line(line, tonic_semitone, german):
+    """Convert every chord token in a chord line to Nashville numbers."""
+    leading = line[: len(line) - len(line.lstrip())]
+    result = leading
+    for token_match in TOKEN_SPLIT_RE.finditer(line[len(leading) :]):
+        token = token_match.group(1)
+        trailing = token_match.group(2)
+        if is_chord_token(token):
+            token = chord_to_nashville(token, tonic_semitone, german)
+        result += token + trailing
+    return result
+
+
+def _nashville_chordpro_line(line, tonic_semitone, german):
+    """Convert bracketed ChordPro chord tokens to Nashville numbers."""
+
+    def replace(match):
+        token = match.group(1)
+        if not CHORD_TOKEN_RE.match(token.strip()):
+            return match.group(0)
+        return f"[{chord_to_nashville(token, tonic_semitone, german)}]"
+
+    return CHORDPRO_BRACKET_RE.sub(replace, line)
+
+
+def text_to_nashville(text, tonic_key):
+    """Convert chord lines (or ChordPro brackets) in text to Nashville numbers.
+
+    Returns ``(result_text, tonic_label)``. Lyric lines are left unchanged.
+    """
+    tonic = parse_key(tonic_key)
+    if tonic is None:
+        raise InvalidKeyError(f"'{tonic_key}' is not a valid key.")
+    tonic_note, tonic_minor = tonic
+
+    chordpro = is_chordpro_text(text)
+    german = _chordpro_uses_german(text) if chordpro else _text_uses_german(text)
+    tonic_semitone = key_semitone(tonic_note, german)
+
+    result_parts = []
+    for segment in text.splitlines(keepends=True):
+        content = segment.splitlines()[0] if segment.splitlines() else ""
+        ending = segment[len(content) :]
+        if chordpro:
+            content = _nashville_chordpro_line(content, tonic_semitone, german)
+        elif is_chord_line(content):
+            content = _nashville_line(content, tonic_semitone, german)
+        result_parts.append(content + ending)
+
+    return "".join(result_parts), key_label(tonic_note, tonic_minor)
 
 
 def transpose_document_bytes(file_bytes, current_key, target_key):

@@ -14,6 +14,10 @@
       class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
       By semitones
     </button>
+    <button type="button" id="mode-nashville" role="tab" aria-selected="false" aria-controls="controls-key"
+      class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+      Nashville #
+    </button>
   </div>
 
   <div id="controls-key" role="tabpanel" aria-labelledby="mode-key" class="flex items-end gap-2">
@@ -101,6 +105,16 @@
       </div>
       <textarea id="text_input" rows="12" spellcheck="false" placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
         class="w-full resize-y rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200"></textarea>
+    </div>
+    <div id="chordpro-format-toggle" class="hidden">
+      <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Output format</span>
+      <div class="inline-flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+        role="group" aria-label="ChordPro output format">
+        <button type="button" id="format_chordpro" aria-pressed="true"
+          class="rounded-md px-3 py-1.5 text-sm transition-colors">Keep ChordPro</button>
+        <button type="button" id="format_plain" aria-pressed="false"
+          class="rounded-md px-3 py-1.5 text-sm transition-colors">Plain chords</button>
+      </div>
     </div>
     <div>
       <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Transposed</span>

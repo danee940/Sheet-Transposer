@@ -1154,3 +1154,172 @@ class TestTransposeTextBySemitones:
         assert result == ""
         assert semitones == 3
         assert changes == []
+
+
+# ---------------------------------------------------------------------------
+# is_chordpro_text
+# ---------------------------------------------------------------------------
+
+
+class TestIsChordPro:
+    def test_detects_inline_chord(self):
+        assert t.is_chordpro_text("[C]Amazing [G]grace") is True
+
+    def test_detects_chord_with_quality(self):
+        assert t.is_chordpro_text("[Am7]hello") is True
+
+    def test_plain_chord_line_is_not_chordpro(self):
+        assert t.is_chordpro_text("C G Am F") is False
+
+    def test_section_label_bracket_is_not_chordpro(self):
+        assert t.is_chordpro_text("[Verse 1]") is False
+
+    def test_empty_text(self):
+        assert t.is_chordpro_text("") is False
+
+    def test_lyrics_without_brackets(self):
+        assert t.is_chordpro_text("just some lyrics") is False
+
+
+# ---------------------------------------------------------------------------
+# ChordPro transposition
+# ---------------------------------------------------------------------------
+
+
+class TestChordProTranspose:
+    def test_transposes_inline_chords(self):
+        result, from_label, to_label, changes = t.transpose_chordpro_text(
+            "[C]Amazing [G]grace", "C", "D"
+        )
+        assert result == "[D]Amazing [A]grace"
+        assert from_label == "C"
+        assert to_label == "D"
+        assert ("C", "D") in changes
+
+    def test_non_chord_bracket_left_verbatim(self):
+        result, _, _, _ = t.transpose_chordpro_text("[Verse 1]\n[C]hello", "C", "D")
+        assert "[Verse 1]" in result
+        assert "[D]hello" in result
+
+    def test_slash_chord_transposed(self):
+        result, _, _, _ = t.transpose_chordpro_text("[G/B]word", "C", "D")
+        assert result == "[A/C#]word"
+
+    def test_invalid_current_key_raises(self):
+        with pytest.raises(t.InvalidKeyError):
+            t.transpose_chordpro_text("[C]x", "X", "D")
+
+    def test_invalid_target_key_raises(self):
+        with pytest.raises(t.InvalidKeyError):
+            t.transpose_chordpro_text("[C]x", "C", "X")
+
+    def test_multiline_preserves_lyrics(self):
+        source = "[C]Line one\nplain lyric\n[G]Line two"
+        result, _, _, _ = t.transpose_chordpro_text(source, "C", "D")
+        assert "plain lyric" in result
+        assert result.startswith("[D]Line one")
+
+    def test_german_chordpro_detected(self):
+        result, _, _, _ = t.transpose_chordpro_text("[H]word", "H", "C")
+        assert result == "[C]word"
+
+    def test_by_semitones(self):
+        result, semitones, changes = t.transpose_chordpro_text_by_semitones(
+            "[C]Amazing [G]grace", 2, False
+        )
+        assert result == "[D]Amazing [A]grace"
+        assert semitones == 2
+        assert ("C", "D") in changes
+
+    def test_by_semitones_flat_spelling(self):
+        result, _, _ = t.transpose_chordpro_text_by_semitones("[C]x", 1, True)
+        assert result == "[Db]x"
+
+    def test_by_semitones_normalises(self):
+        result, semitones, _ = t.transpose_chordpro_text_by_semitones("[C]x", -1, False)
+        assert result == "[B]x"
+        assert semitones == 11
+
+    def test_to_plain_strips_brackets(self):
+        assert t._chordpro_to_plain("[C]Amazing [G]grace") == "C G"
+
+    def test_to_plain_preserves_line_structure(self):
+        assert t._chordpro_to_plain("[C]a\n[G]b\n") == "C\nG\n"
+
+    def test_to_plain_empty_line(self):
+        assert t._chordpro_to_plain("\n[C]x") == "\nC"
+
+
+# ---------------------------------------------------------------------------
+# Nashville number system
+# ---------------------------------------------------------------------------
+
+
+class TestNashvilleNumber:
+    def test_degree_tonic_is_one(self):
+        assert t.note_to_nashville_degree("C", 0, False) == "1"
+
+    def test_degree_fifth(self):
+        assert t.note_to_nashville_degree("G", 0, False) == "5"
+
+    def test_degree_flat_seventh(self):
+        assert t.note_to_nashville_degree("Bb", 0, False) == "b7"
+
+    def test_degree_flat_third(self):
+        assert t.note_to_nashville_degree("Eb", 0, False) == "b3"
+
+    def test_chord_major(self):
+        assert t.chord_to_nashville("C", 0, False) == "1"
+
+    def test_chord_minor(self):
+        assert t.chord_to_nashville("Am", 0, False) == "6m"
+
+    def test_chord_minor_seventh(self):
+        assert t.chord_to_nashville("Am7", 0, False) == "6m7"
+
+    def test_chord_slash(self):
+        assert t.chord_to_nashville("G/B", 0, False) == "5/7"
+
+    def test_chord_non_root_returns_unchanged(self):
+        assert t.chord_to_nashville("", 0, False) == ""
+
+    def test_chord_punctuated(self):
+        assert t.chord_to_nashville("(C)", 0, False) == "(1)"
+
+    def test_chord_punctuated_non_chord_unchanged(self):
+        assert t.chord_to_nashville("(the)", 0, False) == "(the)"
+
+    def test_text_converts_chord_line(self):
+        result, tonic = t.text_to_nashville("C G Am F", "C")
+        assert result == "1 5 6m 4"
+        assert tonic == "C"
+
+    def test_text_leaves_lyrics(self):
+        result, _ = t.text_to_nashville("C G\nthese are lyrics", "C")
+        assert result == "1 5\nthese are lyrics"
+
+    def test_text_minor_tonic_label(self):
+        _, tonic = t.text_to_nashville("Am Dm E", "Am")
+        assert tonic == "Am"
+
+    def test_text_invalid_key_raises(self):
+        with pytest.raises(t.InvalidKeyError):
+            t.text_to_nashville("C G", "X")
+
+    def test_text_chordpro_input(self):
+        result, _ = t.text_to_nashville("[C]Amazing [G]grace", "C")
+        assert result == "[1]Amazing [5]grace"
+
+    def test_text_chordpro_non_chord_bracket(self):
+        result, _ = t.text_to_nashville("[Verse]\n[C]x", "C")
+        assert "[Verse]" in result
+        assert "[1]x" in result
+
+    def test_text_preserves_spacing(self):
+        result, _ = t.text_to_nashville("  C   G", "C")
+        assert result.startswith("  1")
+
+    def test_german_tonic(self):
+        result, tonic = t.text_to_nashville("H Cis", "H")
+        assert result.split()[0] == "1"
+        assert tonic == "H"

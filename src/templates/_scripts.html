@@ -130,8 +130,13 @@
 
   const modeKey = document.getElementById("mode-key");
   const modeSemitone = document.getElementById("mode-semitone");
+  const modeNashville = document.getElementById("mode-nashville");
   const controlsKey = document.getElementById("controls-key");
   const controlsSemitone = document.getElementById("controls-semitone");
+  const textCurrentKeyLabel = document.querySelector('label[for="text_current_key"]');
+  const chordproFormatToggle = document.getElementById("chordpro-format-toggle");
+  const formatChordpro = document.getElementById("format_chordpro");
+  const formatPlain = document.getElementById("format_plain");
   const semitoneValue = document.getElementById("semitone_value");
   const semitoneDown = document.getElementById("semitone_down");
   const semitoneUp = document.getElementById("semitone_up");
@@ -151,6 +156,7 @@
   let transposeMode = "key";
   let semitones = 0;
   let useFlats = false;
+  let outputFormat = "chordpro";
   let transposeTimer = null;
   let requestToken = 0;
 
@@ -167,17 +173,32 @@
   const MODE_ACTIVE_CLASSES = ["bg-card-light", "text-slate-900", "shadow-sm", "dark:bg-card", "dark:text-slate-100"];
   const MODE_INACTIVE_CLASSES = ["text-muted-light", "dark:text-muted"];
 
+  function setModeButtonState(button, active) {
+    button.setAttribute("aria-selected", String(active));
+    button.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+    button.classList.add(...(active ? MODE_ACTIVE_CLASSES : MODE_INACTIVE_CLASSES));
+  }
+
   function selectMode(mode) {
     transposeMode = mode;
     const key = mode === "key";
-    modeKey.setAttribute("aria-selected", String(key));
-    modeSemitone.setAttribute("aria-selected", String(!key));
-    controlsKey.classList.toggle("hidden", !key);
-    controlsSemitone.classList.toggle("hidden", key);
-    modeKey.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
-    modeSemitone.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
-    modeKey.classList.add(...(key ? MODE_ACTIVE_CLASSES : MODE_INACTIVE_CLASSES));
-    modeSemitone.classList.add(...(key ? MODE_INACTIVE_CLASSES : MODE_ACTIVE_CLASSES));
+    const nashville = mode === "nashville";
+    const showKeyControls = key || nashville;
+
+    controlsKey.classList.toggle("hidden", !showKeyControls);
+    controlsSemitone.classList.toggle("hidden", mode !== "semitone");
+
+    textTargetKey.parentElement.classList.toggle("hidden", nashville);
+    textSwap.classList.toggle("hidden", nashville);
+    textCurrentKeyLabel.textContent = nashville ? "Tonic key" : "Current key";
+
+    setModeButtonState(modeKey, key);
+    setModeButtonState(modeSemitone, mode === "semitone");
+    setModeButtonState(modeNashville, nashville);
+
+    if (nashville) {
+      chordproFormatToggle.classList.add("hidden");
+    }
     runTextTranspose();
   }
 
@@ -202,14 +223,36 @@
     runTextTranspose();
   }
 
+  function selectOutputFormat(plain) {
+    outputFormat = plain ? "plain" : "chordpro";
+    formatChordpro.setAttribute("aria-pressed", String(!plain));
+    formatPlain.setAttribute("aria-pressed", String(plain));
+    formatChordpro.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+    formatPlain.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+    formatChordpro.classList.add(...(plain ? MODE_INACTIVE_CLASSES : MODE_ACTIVE_CLASSES));
+    formatPlain.classList.add(...(plain ? MODE_ACTIVE_CLASSES : MODE_INACTIVE_CLASSES));
+    runTextTranspose();
+  }
+
   function buildRequestBody(text) {
-    if (transposeMode === "semitone") {
-      return { text, semitones, notation: useFlats ? "flat" : "sharp" };
+    if (transposeMode === "nashville") {
+      return { text, tonic_key: textCurrentKey.value };
     }
-    return { text, current_key: textCurrentKey.value, target_key: textTargetKey.value };
+    if (transposeMode === "semitone") {
+      return { text, semitones, notation: useFlats ? "flat" : "sharp", output_format: outputFormat };
+    }
+    return {
+      text,
+      current_key: textCurrentKey.value,
+      target_key: textTargetKey.value,
+      output_format: outputFormat,
+    };
   }
 
   function summariseResult(data) {
+    if (transposeMode === "nashville") {
+      return `Nashville · key of ${data.tonic}`;
+    }
     const count = Array.isArray(data.changes) ? data.changes.length : 0;
     const label = transposeMode === "semitone" ? data.label : `${data.from} → ${data.to}`;
     return count > 0
@@ -223,6 +266,7 @@
       textOutput.textContent = "";
       textCopy.disabled = true;
       setTextStatus("");
+      chordproFormatToggle.classList.add("hidden");
       return;
     }
     if (transposeMode === "key" && textCurrentKey.value === textTargetKey.value) {
@@ -239,8 +283,10 @@
     const token = ++requestToken;
     setTextStatus("Transposing…");
 
+    const endpoint = transposeMode === "nashville" ? "/nashville-text" : "/transpose-text";
+
     try {
-      const response = await fetch("/transpose-text", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestBody(text)),
@@ -252,6 +298,9 @@
         setTextStatus(data.error || "Something went wrong.");
         return;
       }
+
+      const isChordPro = data.format === "chordpro" && transposeMode !== "nashville";
+      chordproFormatToggle.classList.toggle("hidden", !isChordPro);
 
       textOutput.textContent = data.text;
       textCopy.disabled = !data.text;
@@ -296,6 +345,9 @@
 
   modeKey.addEventListener("click", () => selectMode("key"));
   modeSemitone.addEventListener("click", () => selectMode("semitone"));
+  modeNashville.addEventListener("click", () => selectMode("nashville"));
+  formatChordpro.addEventListener("click", () => selectOutputFormat(false));
+  formatPlain.addEventListener("click", () => selectOutputFormat(true));
   semitoneDown.addEventListener("click", () => setSemitones(semitones - 1));
   semitoneUp.addEventListener("click", () => setSemitones(semitones + 1));
   semitoneQuick.forEach((button) =>
@@ -318,6 +370,7 @@
     }
   });
 
+  selectOutputFormat(false);
   selectMode("key");
   selectNotation(false);
   updateSemitoneDisplay();
@@ -335,6 +388,71 @@
       setTextStatus("Could not copy to clipboard.");
     }
   });
+
+  const capoKey = document.getElementById("capo-key");
+  const capoTableOutput = document.getElementById("capo-table-output");
+
+  const CAPO_NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  const CAPO_FRIENDLY_SHAPES = [
+    { semitone: 0, major: "C", minor: "Am" },
+    { semitone: 2, major: "D", minor: "Bm" },
+    { semitone: 4, major: "E", minor: "C#m" },
+    { semitone: 5, major: "F", minor: "Dm" },
+    { semitone: 7, major: "G", minor: "Em" },
+    { semitone: 9, major: "A", minor: "F#m" },
+  ];
+  const MAX_CAPO_FRET = 7;
+
+  function keyToCapoSemitone(key) {
+    const cleaned = key.replace(/m$/, "");
+    return CAPO_NOTE_NAMES.reduce((acc, name, index) => {
+      if (acc !== null) return acc;
+      const sharpName = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][index];
+      return name === cleaned || sharpName === cleaned ? index : null;
+    }, null);
+  }
+
+  function renderCapoTable() {
+    const key = capoKey.value;
+    const isMinor = key.endsWith("m");
+    const tonic = keyToCapoSemitone(key);
+    capoTableOutput.replaceChildren();
+    if (tonic === null) return;
+
+    const rows = [];
+    for (const shape of CAPO_FRIENDLY_SHAPES) {
+      const fret = (tonic - shape.semitone + 12) % 12;
+      if (fret > MAX_CAPO_FRET) continue;
+      rows.push({ fret, shape: isMinor ? shape.minor : shape.major });
+    }
+    rows.sort((a, b) => a.fret - b.fret);
+
+    const table = document.createElement("table");
+    table.className = "w-full border-collapse";
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    headRow.className = "text-left text-muted-light dark:text-muted";
+    headRow.appendChild(makeHeaderCell("Capo fret", "pb-2 pr-4 font-medium"));
+    headRow.appendChild(makeHeaderCell("Play shape", "pb-2 pr-4 font-medium"));
+    headRow.appendChild(makeHeaderCell("Sounds like", "pb-2 font-medium"));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    for (const row of rows) {
+      const tr = document.createElement("tr");
+      tr.className = "border-t border-app-border-light dark:border-app-border";
+      tr.appendChild(makeCell(row.fret === 0 ? "No capo" : String(row.fret), "py-2 pr-4"));
+      tr.appendChild(makeCell(row.shape, "py-2 pr-4 font-mono text-slate-900 dark:text-slate-100"));
+      tr.appendChild(makeCell(key, "py-2 font-mono text-slate-900 dark:text-slate-100"));
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    capoTableOutput.appendChild(table);
+  }
+
+  capoKey.addEventListener("change", renderCapoTable);
+  renderCapoTable();
 
   function makeCell(text, className) {
     const cell = document.createElement("td");

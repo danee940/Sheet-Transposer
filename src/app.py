@@ -13,7 +13,12 @@ from flask import Flask, Response, jsonify, render_template, request, send_file
 from transpose import (
     InvalidKeyError,
     PdfConversionError,
+    _chordpro_to_plain,
     convert_docx_to_pdf,
+    is_chordpro_text,
+    text_to_nashville,
+    transpose_chordpro_text,
+    transpose_chordpro_text_by_semitones,
     transpose_document_bytes,
     transpose_text,
     transpose_text_by_semitones,
@@ -150,6 +155,18 @@ def _semitone_label(semitones, use_flats):
     return f"{sign}{magnitude} {unit} ({accidental})"
 
 
+def _resolve_output_format(payload):
+    """Return the requested output format, defaulting to 'auto'."""
+    return (payload.get("output_format") or "auto").strip().lower()
+
+
+def _maybe_plain(result_text, is_chordpro, output_format):
+    """Strip ChordPro brackets when plain output was requested for ChordPro input."""
+    if is_chordpro and output_format == "plain":
+        return _chordpro_to_plain(result_text)
+    return result_text
+
+
 def _transpose_by_semitones_response(text, payload):
     """Handle the semitone-shift variant of the text transpose route."""
     raw_semitones = payload.get("semitones")
@@ -165,17 +182,29 @@ def _transpose_by_semitones_response(text, payload):
         return jsonify({"error": "Notation must be either 'sharp' or 'flat'."}), 400
     use_flats = notation == "flat"
 
-    result_text, normalised, changes = transpose_text_by_semitones(text, raw_semitones, use_flats)
+    chordpro = is_chordpro_text(text)
+    output_format = _resolve_output_format(payload)
 
-    return jsonify(
-        {
-            "text": result_text,
-            "semitones": raw_semitones,
-            "label": _semitone_label(raw_semitones, use_flats),
-            "notation": notation,
-            "changes": [{"from": a, "to": b} for a, b in changes],
-        }
-    )
+    if chordpro:
+        result_text, normalised, changes = transpose_chordpro_text_by_semitones(
+            text, raw_semitones, use_flats
+        )
+        result_text = _maybe_plain(result_text, chordpro, output_format)
+    else:
+        result_text, normalised, changes = transpose_text_by_semitones(
+            text, raw_semitones, use_flats
+        )
+
+    body = {
+        "text": result_text,
+        "semitones": raw_semitones,
+        "label": _semitone_label(raw_semitones, use_flats),
+        "notation": notation,
+        "changes": [{"from": a, "to": b} for a, b in changes],
+    }
+    if chordpro:
+        body["format"] = "chordpro"
+    return jsonify(body)
 
 
 def _transpose_by_key_response(text, payload):
@@ -186,19 +215,31 @@ def _transpose_by_key_response(text, payload):
     if not current_key or not target_key:
         return jsonify({"error": "Both current and desired keys are required."}), 400
 
+    chordpro = is_chordpro_text(text)
+    output_format = _resolve_output_format(payload)
+
     try:
-        result_text, from_label, to_label, changes = transpose_text(text, current_key, target_key)
+        if chordpro:
+            result_text, from_label, to_label, changes = transpose_chordpro_text(
+                text, current_key, target_key
+            )
+            result_text = _maybe_plain(result_text, chordpro, output_format)
+        else:
+            result_text, from_label, to_label, changes = transpose_text(
+                text, current_key, target_key
+            )
     except InvalidKeyError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    return jsonify(
-        {
-            "text": result_text,
-            "from": from_label,
-            "to": to_label,
-            "changes": [{"from": a, "to": b} for a, b in changes],
-        }
-    )
+    body = {
+        "text": result_text,
+        "from": from_label,
+        "to": to_label,
+        "changes": [{"from": a, "to": b} for a, b in changes],
+    }
+    if chordpro:
+        body["format"] = "chordpro"
+    return jsonify(body)
 
 
 @app.route("/transpose-text", methods=["POST"])
@@ -219,6 +260,28 @@ def transpose_text_route():
     if "semitones" in payload:
         return _transpose_by_semitones_response(text, payload)
     return _transpose_by_key_response(text, payload)
+
+
+@app.route("/nashville-text", methods=["POST"])
+def nashville_text_route():
+    """Convert pasted chords to the Nashville number system relative to a tonic key."""
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text")
+    tonic_key = (payload.get("tonic_key") or "").strip()
+
+    if not isinstance(text, str):
+        return jsonify({"error": "No text provided."}), 400
+    if len(text) > MAX_TEXT_CHARS:
+        return jsonify({"error": "Text is too long. The maximum is 20,000 characters."}), 400
+    if not tonic_key:
+        return jsonify({"error": "A tonic key is required."}), 400
+
+    try:
+        result_text, tonic_label = text_to_nashville(text, tonic_key)
+    except InvalidKeyError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify({"text": result_text, "tonic": tonic_label})
 
 
 @app.route("/transpose", methods=["POST"])
