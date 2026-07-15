@@ -199,7 +199,7 @@
   </header>
 
   <main
-    class="w-full max-w-lg rounded-2xl border border-app-border-light bg-card-light/80 p-8 shadow-2xl shadow-slate-300/40 backdrop-blur dark:border-app-border dark:bg-card/80 dark:shadow-black/40 motion-safe:animate-fade-up">
+    class="w-full max-w-4xl rounded-2xl border border-app-border-light bg-card-light/80 p-8 shadow-2xl shadow-slate-300/40 backdrop-blur dark:border-app-border dark:bg-card/80 dark:shadow-black/40 motion-safe:animate-fade-up">
     <div class="mb-6 flex gap-1 rounded-xl border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
       role="tablist" aria-label="Transpose mode">
       <button type="button" id="tab-paste" role="tab" aria-selected="true" aria-controls="panel-paste"
@@ -218,7 +218,19 @@
         Paste your chords and see them transposed instantly — no upload, no download.
       </p>
 
-      <div class="flex items-end gap-2">
+      <div class="mb-4 flex gap-1 rounded-xl border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+        role="tablist" aria-label="Transpose method">
+        <button type="button" id="mode-key" role="tab" aria-selected="true" aria-controls="controls-key"
+          class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+          By key
+        </button>
+        <button type="button" id="mode-semitone" role="tab" aria-selected="false" aria-controls="controls-semitone"
+          class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+          By semitones
+        </button>
+      </div>
+
+      <div id="controls-key" role="tabpanel" aria-labelledby="mode-key" class="flex items-end gap-2">
         <div class="flex-1">
           <label for="text_current_key" class="mb-1.5 block text-sm text-muted-light dark:text-muted">Current key</label>
           <select id="text_current_key"
@@ -245,16 +257,69 @@
         </div>
       </div>
 
-      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <div id="controls-semitone" role="tabpanel" aria-labelledby="mode-semitone" class="hidden">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2">
+            <button type="button" id="semitone_down" aria-label="Lower by a semitone" title="Lower by a semitone"
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-app-border-light bg-bg-light text-lg text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
+              &minus;
+            </button>
+            <div class="w-28 text-center">
+              <div id="semitone_value" class="font-mono text-lg font-semibold text-slate-900 dark:text-slate-100">0</div>
+              <div class="text-xs text-muted-light dark:text-muted">semitones</div>
+            </div>
+            <button type="button" id="semitone_up" aria-label="Raise by a semitone" title="Raise by a semitone"
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-app-border-light bg-bg-light text-lg text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
+              &plus;
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Quick semitone shift">
+            {% for step in [-5, -3, -1, 0, 1, 3, 5] %}
+            <button type="button" data-semitone="{{ step }}"
+              class="semitone-quick rounded-lg border border-app-border-light bg-bg-light px-2.5 py-1.5 font-mono text-xs text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
+              {{ '%+d' % step if step != 0 else '0' }}
+            </button>
+            {% endfor %}
+          </div>
+
+          <div class="flex items-center gap-1 rounded-lg border border-app-border-light bg-bg-light p-1 dark:border-app-border dark:bg-bg"
+            role="group" aria-label="Accidental notation">
+            <button type="button" id="notation_sharp" aria-pressed="true"
+              class="rounded-md px-3 py-1.5 text-sm transition-colors">&sharp; Sharp</button>
+            <button type="button" id="notation_flat" aria-pressed="false"
+              class="rounded-md px-3 py-1.5 text-sm transition-colors">&flat; Flat</button>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-muted-light dark:text-muted">
+          A raw semitone shift ignores key context, so pick the accidental style yourself. For the
+          theoretically correct spelling, use <strong>By key</strong> above.
+        </p>
+      </div>
+
+      <div class="mt-5 space-y-4">
         <div>
-          <label for="text_input" class="mb-1.5 block text-sm text-muted-light dark:text-muted">Your chords</label>
-          <textarea id="text_input" rows="10" spellcheck="false" placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
-            class="w-full resize-y rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200"></textarea>
+          <div class="mb-1.5 flex items-center justify-between gap-3">
+            <label for="text_input" class="block text-sm text-muted-light dark:text-muted">Your chords</label>
+            <div class="flex items-center gap-3">
+              <span id="text_linecount" class="text-xs text-muted-light dark:text-muted">0 lines</span>
+              <button type="button" id="text_sample"
+                class="rounded-lg border border-app-border-light bg-bg-light px-2.5 py-1 text-xs text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
+                Insert sample
+              </button>
+              <button type="button" id="text_clear"
+                class="rounded-lg border border-app-border-light bg-bg-light px-2.5 py-1 text-xs text-slate-800 transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200">
+                Clear
+              </button>
+            </div>
+          </div>
+          <textarea id="text_input" rows="12" spellcheck="false" placeholder="C       G&#10;Am      F&#10;&#10;Verse chords, tabs, or a full sheet…"
+            class="w-full resize-y rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent dark:border-app-border dark:bg-bg dark:text-slate-200"></textarea>
         </div>
         <div>
           <span class="mb-1.5 block text-sm text-muted-light dark:text-muted">Transposed</span>
           <pre id="text_output" aria-live="polite"
-            class="h-[calc(100%-1.75rem)] min-h-[13.5rem] overflow-auto whitespace-pre rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm text-slate-800 dark:border-app-border dark:bg-bg dark:text-slate-200"></pre>
+            class="min-h-[10rem] overflow-auto whitespace-pre rounded-xl border border-app-border-light bg-bg-light px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-800 dark:border-app-border dark:bg-bg dark:text-slate-200"></pre>
         </div>
       </div>
 
@@ -630,12 +695,97 @@
     const textCurrentKey = document.getElementById("text_current_key");
     const textTargetKey = document.getElementById("text_target_key");
     const textSwap = document.getElementById("text_swap");
+    const textLineCount = document.getElementById("text_linecount");
+    const textSample = document.getElementById("text_sample");
+    const textClear = document.getElementById("text_clear");
 
+    const modeKey = document.getElementById("mode-key");
+    const modeSemitone = document.getElementById("mode-semitone");
+    const controlsKey = document.getElementById("controls-key");
+    const controlsSemitone = document.getElementById("controls-semitone");
+    const semitoneValue = document.getElementById("semitone_value");
+    const semitoneDown = document.getElementById("semitone_down");
+    const semitoneUp = document.getElementById("semitone_up");
+    const semitoneQuick = document.querySelectorAll(".semitone-quick");
+    const notationSharp = document.getElementById("notation_sharp");
+    const notationFlat = document.getElementById("notation_flat");
+
+    const MAX_SEMITONES = {{ max_semitones }};
+    const SAMPLE_CHORDS =
+      "C           G           Am          F\n" +
+      "Twinkle twinkle little star\n\n" +
+      "C           G           C\n" +
+      "How I wonder what you are\n\n" +
+      "F      C      G      C\n" +
+      "Up above the world so high";
+
+    let transposeMode = "key";
+    let semitones = 0;
+    let useFlats = false;
     let transposeTimer = null;
     let requestToken = 0;
 
     function setTextStatus(text) {
       textStatus.textContent = text;
+    }
+
+    function updateLineCount() {
+      const value = textInput.value;
+      const lines = value === "" ? 0 : value.split("\n").length;
+      textLineCount.textContent = `${lines} line${lines === 1 ? "" : "s"}`;
+    }
+
+    const MODE_ACTIVE_CLASSES = ["bg-card-light", "text-slate-900", "shadow-sm", "dark:bg-card", "dark:text-slate-100"];
+    const MODE_INACTIVE_CLASSES = ["text-muted-light", "dark:text-muted"];
+
+    function selectMode(mode) {
+      transposeMode = mode;
+      const key = mode === "key";
+      modeKey.setAttribute("aria-selected", String(key));
+      modeSemitone.setAttribute("aria-selected", String(!key));
+      controlsKey.classList.toggle("hidden", !key);
+      controlsSemitone.classList.toggle("hidden", key);
+      modeKey.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+      modeSemitone.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+      modeKey.classList.add(...(key ? MODE_ACTIVE_CLASSES : MODE_INACTIVE_CLASSES));
+      modeSemitone.classList.add(...(key ? MODE_INACTIVE_CLASSES : MODE_ACTIVE_CLASSES));
+      runTextTranspose();
+    }
+
+    function updateSemitoneDisplay() {
+      semitoneValue.textContent = semitones > 0 ? `+${semitones}` : String(semitones);
+    }
+
+    function setSemitones(value) {
+      semitones = Math.max(-MAX_SEMITONES, Math.min(MAX_SEMITONES, value));
+      updateSemitoneDisplay();
+      runTextTranspose();
+    }
+
+    function selectNotation(flat) {
+      useFlats = flat;
+      notationSharp.setAttribute("aria-pressed", String(!flat));
+      notationFlat.setAttribute("aria-pressed", String(flat));
+      notationSharp.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+      notationFlat.classList.remove(...MODE_ACTIVE_CLASSES, ...MODE_INACTIVE_CLASSES);
+      notationSharp.classList.add(...(flat ? MODE_INACTIVE_CLASSES : MODE_ACTIVE_CLASSES));
+      notationFlat.classList.add(...(flat ? MODE_ACTIVE_CLASSES : MODE_INACTIVE_CLASSES));
+      runTextTranspose();
+    }
+
+    function buildRequestBody(text) {
+      if (transposeMode === "semitone") {
+        return { text, semitones, notation: useFlats ? "flat" : "sharp" };
+      }
+      return { text, current_key: textCurrentKey.value, target_key: textTargetKey.value };
+    }
+
+    function summariseResult(data) {
+      const count = Array.isArray(data.changes) ? data.changes.length : 0;
+      const label = transposeMode === "semitone" ? data.label : `${data.from} → ${data.to}`;
+      return count > 0
+        ? `${label} · ${count} chord${count === 1 ? "" : "s"} changed`
+        : `${label} · no chords found to change`;
     }
 
     async function runTextTranspose() {
@@ -646,8 +796,14 @@
         setTextStatus("");
         return;
       }
-      if (textCurrentKey.value === textTargetKey.value) {
+      if (transposeMode === "key" && textCurrentKey.value === textTargetKey.value) {
         setTextStatus("Pick two different keys to transpose.");
+        return;
+      }
+      if (transposeMode === "semitone" && semitones === 0) {
+        textOutput.textContent = text;
+        textCopy.disabled = !text;
+        setTextStatus("No shift · pick a semitone offset to transpose.");
         return;
       }
 
@@ -658,11 +814,7 @@
         const response = await fetch("/transpose-text", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text,
-            current_key: textCurrentKey.value,
-            target_key: textTargetKey.value,
-          }),
+          body: JSON.stringify(buildRequestBody(text)),
         });
         if (token !== requestToken) return;
 
@@ -674,12 +826,7 @@
 
         textOutput.textContent = data.text;
         textCopy.disabled = !data.text;
-        const count = Array.isArray(data.changes) ? data.changes.length : 0;
-        setTextStatus(
-          count > 0
-            ? `${data.from} → ${data.to} · ${count} chord${count === 1 ? "" : "s"} changed`
-            : `${data.from} → ${data.to} · no chords found to change`
-        );
+        setTextStatus(summariseResult(data));
       } catch {
         if (token === requestToken) setTextStatus("Network error. Please try again.");
       }
@@ -690,7 +837,10 @@
       transposeTimer = setTimeout(runTextTranspose, 250);
     }
 
-    textInput.addEventListener("input", scheduleTextTranspose);
+    textInput.addEventListener("input", () => {
+      updateLineCount();
+      scheduleTextTranspose();
+    });
     textCurrentKey.addEventListener("change", runTextTranspose);
     textTargetKey.addEventListener("change", runTextTranspose);
 
@@ -700,6 +850,49 @@
       textTargetKey.value = from;
       runTextTranspose();
     });
+
+    textSample.addEventListener("click", () => {
+      textInput.value = SAMPLE_CHORDS;
+      updateLineCount();
+      runTextTranspose();
+      textInput.focus();
+    });
+
+    textClear.addEventListener("click", () => {
+      textInput.value = "";
+      updateLineCount();
+      runTextTranspose();
+      textInput.focus();
+    });
+
+    modeKey.addEventListener("click", () => selectMode("key"));
+    modeSemitone.addEventListener("click", () => selectMode("semitone"));
+    semitoneDown.addEventListener("click", () => setSemitones(semitones - 1));
+    semitoneUp.addEventListener("click", () => setSemitones(semitones + 1));
+    semitoneQuick.forEach((button) =>
+      button.addEventListener("click", () => setSemitones(Number(button.dataset.semitone)))
+    );
+    notationSharp.addEventListener("click", () => selectNotation(false));
+    notationFlat.addEventListener("click", () => selectNotation(true));
+
+    document.addEventListener("keydown", (event) => {
+      if (transposeMode !== "semitone") return;
+      const target = event.target;
+      const typing = target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.tagName === "SELECT");
+      if (typing) return;
+      if (event.key === "[") {
+        event.preventDefault();
+        setSemitones(semitones - 1);
+      } else if (event.key === "]") {
+        event.preventDefault();
+        setSemitones(semitones + 1);
+      }
+    });
+
+    selectMode("key");
+    selectNotation(false);
+    updateSemitoneDisplay();
+    updateLineCount();
 
     textCopy.addEventListener("click", async () => {
       try {
