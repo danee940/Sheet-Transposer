@@ -1,24 +1,24 @@
 {
-  "_paste.B-wPCnu7.js": {
-    "file": "paste.B-wPCnu7.js",
-    "name": "paste"
+  "_upload.DuAbIF_2.js": {
+    "file": "upload.DuAbIF_2.js",
+    "name": "upload"
   },
   "landing.js": {
-    "file": "landing.Cz-Fjq3h.js",
+    "file": "landing.DtQBkxls.js",
     "name": "landing",
     "src": "landing.js",
     "isEntry": true,
     "imports": [
-      "_paste.B-wPCnu7.js"
+      "_upload.DuAbIF_2.js"
     ]
   },
   "main.js": {
-    "file": "main.CdlCq6Pi.js",
+    "file": "main.C6jvJXeq.js",
     "name": "main",
     "src": "main.js",
     "isEntry": true,
     "imports": [
-      "_paste.B-wPCnu7.js"
+      "_upload.DuAbIF_2.js"
     ]
   }
 }
