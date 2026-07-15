@@ -738,3 +738,25 @@ class TestTextImport:
         response = client.post("/transpose-text", data=data, content_type="multipart/form-data")
         assert response.status_code == 400
         assert "Only .txt" in response.get_json()["error"]
+
+
+class TestFileTransposerPage:
+    def test_file_page_serves_working_upload_form(self, client):
+        page = client.get("/file-chord-transposer")
+        assert page.status_code == 200
+        page_body = page.get_data(as_text=True)
+        assert 'id="panel-upload"' in page_body
+        assert 'class="hidden"' not in page_body.split('id="panel-upload"')[1].split(">")[0]
+
+        docx_bytes = _make_docx("C G Am F", "These are the lyrics")
+        data = {
+            "file": (BytesIO(docx_bytes), "sheet.docx"),
+            "current_key": "C",
+            "target_key": "D",
+            "format": "docx",
+        }
+        response = client.post("/transpose", data=data, content_type="multipart/form-data")
+
+        assert response.status_code == 200
+        assert "sheet_D.docx" in response.headers["Content-Disposition"]
+        assert _paragraphs(response.data)[0] == "D A Bm G"

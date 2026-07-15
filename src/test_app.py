@@ -316,6 +316,20 @@ def test_chromatic_chart_page_renders_grid(client):
     assert "+7" in body
 
 
+def test_chromatic_chart_page_shows_chart_before_transposer(client):
+    body = client.get("/chromatic-chart").get_data(as_text=True)
+    assert body.index("Every key, shifted by semitone") < body.index('id="panel-paste"')
+
+
+def test_chromatic_chart_page_has_reference_tables(client):
+    body = client.get("/chromatic-chart").get_data(as_text=True)
+    assert "Semitones to interval names" in body
+    assert "Perfect fifth" in body
+    assert "Key signatures" in body
+    assert "Relative minor" in body
+    assert "F#m" in body
+
+
 def test_key_pair_page_preselects_keys(client):
     body = client.get("/transpose/g-to-a").get_data(as_text=True)
     assert 'data-preselect-from="G"' in body
@@ -342,6 +356,88 @@ def test_faq_is_single_sourced(client):
     accordion_count = body.count("<summary")
     faq_block = next(block for block in _jsonld_blocks(body) if block.get("@type") == "FAQPage")
     assert accordion_count == len(faq_block["mainEntity"]) == len(seo.FAQ_ITEMS)
+
+
+def test_home_has_no_capo_calculator(client):
+    body = client.get("/").get_data(as_text=True)
+    assert 'id="capo-calculator"' not in body
+    assert 'id="capo-key"' not in body
+
+
+def test_guitar_page_has_capo_calculator(client):
+    body = client.get("/guitar-chord-transposer").get_data(as_text=True)
+    assert 'id="capo-calculator"' in body
+    assert 'id="capo-key"' in body
+
+
+def test_instrument_pages_preselect_matching_instrument(client):
+    expected = {
+        "guitar-chord-transposer": "guitar",
+        "ukulele-chord-transposer": "ukulele",
+        "piano-chord-transposer": "piano",
+    }
+    for slug, instrument in expected.items():
+        body = client.get(f"/{slug}").get_data(as_text=True)
+        assert f'data-instrument="{instrument}"' in body
+
+
+def test_home_and_key_pair_pages_omit_data_instrument(client):
+    assert "data-instrument=" not in client.get("/").get_data(as_text=True)
+    assert "data-instrument=" not in client.get("/transpose/g-to-a").get_data(as_text=True)
+
+
+def test_file_page_exists_with_upload_panel(client):
+    response = client.get("/file-chord-transposer")
+    assert response.status_code == 200
+    body = response.get_data(as_text=True)
+    assert 'id="panel-upload"' in body
+    assert 'id="file"' in body
+    assert 'id="panel-paste"' not in body
+
+
+def test_file_page_has_distinct_title_and_description(client):
+    body = client.get("/file-chord-transposer").get_data(as_text=True)
+    home_body = client.get("/").get_data(as_text=True)
+    assert _title(body) != _title(home_body)
+    description = re.search(r'<meta name="description" content="(.*?)"', body).group(1)
+    assert ".docx" in description
+
+
+def test_pages_have_page_specific_faq(client):
+    cases = {
+        "/guitar-chord-transposer": seo.GUITAR_FAQ_ITEMS,
+        "/ukulele-chord-transposer": seo.UKULELE_FAQ_ITEMS,
+        "/piano-chord-transposer": seo.PIANO_FAQ_ITEMS,
+        "/file-chord-transposer": seo.FILE_FAQ_ITEMS,
+        "/chromatic-chart": seo.CHART_FAQ_ITEMS,
+    }
+    for path, faq_items in cases.items():
+        body = client.get(path).get_data(as_text=True)
+        faq_block = next(block for block in _jsonld_blocks(body) if block.get("@type") == "FAQPage")
+        rendered_questions = {item["question"] for item in faq_items}
+        jsonld_questions = {entry["name"] for entry in faq_block["mainEntity"]}
+        assert jsonld_questions == rendered_questions
+        assert body.count("<summary") == len(faq_items)
+        assert faq_items[0]["question"] in body
+
+
+def test_nav_lists_file_transposer_first(client):
+    sections = seo.nav_sections()
+    assert sections[0]["links"][0]["path"] == "/file-chord-transposer"
+    body = client.get("/").get_data(as_text=True)
+    assert "/file-chord-transposer" in body
+
+
+def test_nav_columns_balance_links_and_keep_all_sections():
+    columns = seo.nav_columns()
+    assert len(columns) == 2
+    assert all(column for column in columns)
+    flattened = [section for column in columns for section in column]
+    assert sorted(s["heading"] for s in flattened) == sorted(
+        s["heading"] for s in seo.nav_sections()
+    )
+    tall_column = max(columns, key=lambda column: sum(len(s["links"]) for s in column))
+    assert any(s["heading"] == "By instrument" for s in tall_column)
 
 
 def test_sitemap_lists_every_landing_url(client):
