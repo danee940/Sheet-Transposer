@@ -1,4 +1,5 @@
 import { formatCapoSuggestion } from "./capo-suggest.js";
+import { initDiagrams } from "./diagrams/index.js";
 import { MODE_ACTIVE_CLASSES, MODE_INACTIVE_CLASSES } from "./dom.js";
 import { loadPrefs, savePrefs } from "./prefs.js";
 import { createStageView } from "./stage.js";
@@ -61,6 +62,7 @@ export function initPaste() {
 
   const panelPaste = document.getElementById("panel-paste");
   const MAX_SEMITONES = parseInt(panelPaste.dataset.maxSemitones, 10);
+  const diagrams = initDiagrams(() => instrument);
   const SAMPLE_CHORDS =
     "C           G           Am          F\n" +
     "Twinkle twinkle little star\n\n" +
@@ -245,7 +247,7 @@ export function initPaste() {
       return;
     }
     if (transposeMode === "semitone" && semitones === 0) {
-      textOutput.textContent = text;
+      diagrams.renderInto(textOutput, text);
       textCopy.disabled = !text;
       setTextStatus("No shift · pick a semitone offset to transpose.");
       syncOutputControls();
@@ -257,7 +259,7 @@ export function initPaste() {
       const isChordPro = data.format === "chordpro" && transposeMode !== "nashville";
       chordproFormatToggle.classList.toggle("hidden", !isChordPro);
 
-      textOutput.textContent = data.text;
+      diagrams.renderInto(textOutput, data.text);
       textCopy.disabled = !data.text;
       setTextStatus(summariseResult(data));
     } catch (error) {
@@ -298,6 +300,7 @@ export function initPaste() {
 
   textInstrument.addEventListener("change", () => {
     instrument = textInstrument.value;
+    diagrams.closePopover();
     updateCapoSuggestion();
     persistPrefs();
   });

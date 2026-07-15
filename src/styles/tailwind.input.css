@@ -5,3 +5,63 @@
 summary::-webkit-details-marker {
   display: none;
 }
+
+.chord-token {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #4f46e5;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.chord-token:hover {
+  color: #6366f1;
+  text-decoration-style: solid;
+}
+
+.chord-token:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chord-token {
+    color: #a5b4fc;
+  }
+  .chord-token:hover {
+    color: #c7d2fe;
+  }
+}
+
+.diagram-fretboard,
+.diagram-keyboard {
+  color: #334155;
+}
+
+.diagram-keyboard {
+  --diagram-white: #ffffff;
+  --diagram-black: #334155;
+  --diagram-active: #6366f1;
+  --diagram-root: #4f46e5;
+  --diagram-line: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .diagram-fretboard,
+  .diagram-keyboard {
+    color: #cbd5e1;
+  }
+  .diagram-keyboard {
+    --diagram-white: #e2e8f0;
+    --diagram-black: #0f172a;
+    --diagram-active: #6366f1;
+    --diagram-root: #818cf8;
+    --diagram-line: #64748b;
+  }
+}
