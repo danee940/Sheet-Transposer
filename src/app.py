@@ -7,6 +7,7 @@ from urllib.parse import quote
 from zipfile import BadZipFile
 
 from docx.opc.exceptions import PackageNotFoundError
+from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from transpose import (
@@ -15,10 +16,14 @@ from transpose import (
     convert_docx_to_pdf,
     transpose_document_bytes,
     transpose_text,
+    transpose_text_by_semitones,
 )
+
+load_dotenv()
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_TEXT_CHARS = 20_000
+MAX_SEMITONES = 11
 
 SITE_URL = "https://chordtransposer.app"
 
@@ -93,7 +98,7 @@ def log_request_end(response):
 @app.route("/")
 def index():
     """Render the upload page with available key options."""
-    return render_template("index.html", keys=KEY_OPTIONS)
+    return render_template("index.html", keys=KEY_OPTIONS, max_semitones=MAX_SEMITONES)
 
 
 @app.route("/health")
@@ -134,20 +139,52 @@ def sitemap():
     return Response(body, mimetype="application/xml")
 
 
-@app.route("/transpose-text", methods=["POST"])
-def transpose_text_route():
-    """Transpose chords in pasted text and return the result as JSON for live preview."""
-    payload = request.get_json(silent=True) or {}
-    text = payload.get("text")
+def _semitone_label(semitones, use_flats):
+    """Return a human-readable label such as '+2 semitones (♯)' for a shift."""
+    accidental = "♭" if use_flats else "♯"
+    if semitones == 0:
+        return f"No change ({accidental})"
+    sign = "+" if semitones > 0 else "−"
+    magnitude = abs(semitones)
+    unit = "semitone" if magnitude == 1 else "semitones"
+    return f"{sign}{magnitude} {unit} ({accidental})"
+
+
+def _transpose_by_semitones_response(text, payload):
+    """Handle the semitone-shift variant of the text transpose route."""
+    raw_semitones = payload.get("semitones")
+    if isinstance(raw_semitones, bool) or not isinstance(raw_semitones, int):
+        return jsonify({"error": "A whole number of semitones is required."}), 400
+    if abs(raw_semitones) > MAX_SEMITONES:
+        return jsonify(
+            {"error": f"Semitones must be between −{MAX_SEMITONES} and +{MAX_SEMITONES}."}
+        ), 400
+
+    notation = (payload.get("notation") or "sharp").strip().lower()
+    if notation not in ("sharp", "flat"):
+        return jsonify({"error": "Notation must be either 'sharp' or 'flat'."}), 400
+    use_flats = notation == "flat"
+
+    result_text, normalised, changes = transpose_text_by_semitones(text, raw_semitones, use_flats)
+
+    return jsonify(
+        {
+            "text": result_text,
+            "semitones": raw_semitones,
+            "label": _semitone_label(raw_semitones, use_flats),
+            "notation": notation,
+            "changes": [{"from": a, "to": b} for a, b in changes],
+        }
+    )
+
+
+def _transpose_by_key_response(text, payload):
+    """Handle the key-based variant of the text transpose route."""
     current_key = (payload.get("current_key") or "").strip()
     target_key = (payload.get("target_key") or "").strip()
 
-    if not isinstance(text, str):
-        return jsonify({"error": "No text provided."}), 400
     if not current_key or not target_key:
         return jsonify({"error": "Both current and desired keys are required."}), 400
-    if len(text) > MAX_TEXT_CHARS:
-        return jsonify({"error": "Text is too long. The maximum is 20,000 characters."}), 400
 
     try:
         result_text, from_label, to_label, changes = transpose_text(text, current_key, target_key)
@@ -162,6 +199,26 @@ def transpose_text_route():
             "changes": [{"from": a, "to": b} for a, b in changes],
         }
     )
+
+
+@app.route("/transpose-text", methods=["POST"])
+def transpose_text_route():
+    """Transpose chords in pasted text and return the result as JSON for live preview.
+
+    Accepts either a key-based payload (``current_key`` and ``target_key``) or a
+    semitone-shift payload (``semitones`` with optional ``notation``).
+    """
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text")
+
+    if not isinstance(text, str):
+        return jsonify({"error": "No text provided."}), 400
+    if len(text) > MAX_TEXT_CHARS:
+        return jsonify({"error": "Text is too long. The maximum is 20,000 characters."}), 400
+
+    if "semitones" in payload:
+        return _transpose_by_semitones_response(text, payload)
+    return _transpose_by_key_response(text, payload)
 
 
 @app.route("/transpose", methods=["POST"])
