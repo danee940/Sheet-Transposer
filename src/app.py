@@ -175,7 +175,7 @@ def index():
         faq_items=FAQ_ITEMS,
         howto_steps=HOWTO_STEPS,
         chart=seo.compact_chromatic_chart(),
-        nav_sections=seo.nav_sections(),
+        nav_columns=seo.nav_columns(),
         current_path="/",
         jsonld=seo.home_jsonld(),
     )
@@ -425,7 +425,7 @@ def binder():
 
 
 LANDING_PAGES = seo.landing_pages()
-NAV_SECTIONS = seo.nav_sections()
+NAV_COLUMNS = seo.nav_columns()
 
 
 def _landing_context(page):
@@ -436,8 +436,9 @@ def _landing_context(page):
         "max_semitones": MAX_SEMITONES,
         "preselect_from": page["preselect_from"],
         "preselect_to": page["preselect_to"],
-        "faq_items": FAQ_ITEMS,
-        "nav_sections": NAV_SECTIONS,
+        "preselect_instrument": page.get("preselect_instrument"),
+        "faq_items": page["faq_items"],
+        "nav_columns": NAV_COLUMNS,
         "current_path": page["path"],
         "page_title": page["title"],
         "page_description": page["description"],
