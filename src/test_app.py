@@ -340,3 +340,10 @@ def test_sitemap_lists_every_landing_url(client):
 def test_robots_txt_points_to_sitemap(client):
     body = client.get("/robots.txt").get_data(as_text=True)
     assert f"Sitemap: {seo.SITE_URL}/sitemap.xml" in body
+
+
+def test_capo_suggestion_covers_all_branches():
+    assert seo._capo_suggestion("C", "C", 0) == "no capo is needed because the keys are the same"
+    assert "fret 2" in seo._capo_suggestion("C", "D", 2)
+    downshift = seo._capo_suggestion("C", "A", 9)
+    assert "transpose down 3 semitones" in downshift
