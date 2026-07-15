@@ -1,8 +1,13 @@
 # Chord Transposer — Agent Rules
 
 Small Flask app that transposes `.docx` chord sheets between musical keys.
-Core logic lives in `src/transpose.py`; the web layer is `src/app.py` with a
-single Tailwind (CDN) template at `src/templates/index.html`.
+Core logic lives in `src/transpose.py`; the web layer is `src/app.py`, and the
+SEO landing pages, structured data, and sitemap are built in `src/seo.py`. The
+UI is composed from partial templates under `src/templates/` (`index.html`,
+`landing.html`, and the `_*.html` partials), with a prebuilt Tailwind stylesheet
+and a Vite-bundled frontend under `src/js/` (no runtime CDN). The transpose core
+is mirrored in JavaScript under `src/js/transpose/` and kept in parity with the
+Python implementation via a shared case harness.
 
 ## Mandatory: run all Python checks after any change
 
@@ -16,14 +21,19 @@ pytest
 ```
 
 - `pytest` is configured (in `pyproject.toml`) to run with coverage and to
-  fail if combined coverage of `transpose.py` and `app.py` drops below 95%.
-- `testpaths` includes three test files: `src/test_transpose.py`,
-  `src/test_app.py`, and `src/test_integration.py`. All three must pass. Do
-  not remove any from `testpaths`.
+  fail if combined coverage of `transpose.py`, `app.py`, and `seo.py` drops
+  below 95%.
+- `testpaths` includes four test files: `src/test_transpose.py`,
+  `src/test_app.py`, `src/test_integration.py`, and `src/test_parity.py`. All
+  four must pass. Do not remove any from `testpaths`.
 - `src/test_integration.py` contains end-to-end integration tests using real
   `.docx` bytes. When adding new behaviour to `src/transpose.py` or
   `src/app.py`, consider whether a corresponding integration test is needed
   there.
+- `src/test_parity.py` replays `src/testdata/transpose_cases.json` through the
+  Python core to guarantee it stays in parity with the JS port (see the parity
+  section below). When you change transpose behaviour, update the shared cases
+  and keep both implementations aligned.
 - Fix all lint, formatting, test, and coverage failures. Never leave the suite red.
 - If a change lowers coverage, add or update tests to restore it.
 
@@ -47,6 +57,27 @@ npm run test:js
   lowers coverage, add or update tests to restore it.
 - CI runs this in a separate `frontend` job (`.github/workflows/ci.yml`)
   alongside the Python `checks` job.
+
+## Frontend bundle (Vite build)
+
+- The browser code under `src/js/` is bundled by Vite (`vite.config.js`) into
+  hashed assets under `src/static/js/`, with a `manifest.json` mapping entries
+  to their hashed filenames. `app.py` reads that manifest (`_resolve_js_bundle`)
+  to inject the correct `js_bundle` URL into templates, falling back to an
+  unhashed path when the manifest is absent.
+- After changing any file under `src/js/`, rebuild with `npm run build:js` (or
+  `npm run build` to rebuild CSS and JS together) and commit the regenerated
+  `src/static/js/` output, including `manifest.json`. The Docker image ships
+  these files as-is and does not run Node.
+
+## JS/Python transpose parity
+
+- `src/transpose.py` and `src/js/transpose/` are two implementations of the same
+  core and must stay in lockstep. `src/testdata/transpose_cases.json` is the
+  shared case harness: `src/test_parity.py` replays it through Python and
+  `src/js/transpose/parity.test.js` replays it through JS.
+- When you change transpose behaviour, update both implementations and the
+  shared cases, then run both `pytest` and `npm run test:js`.
 
 ## Styling (Tailwind build)
 

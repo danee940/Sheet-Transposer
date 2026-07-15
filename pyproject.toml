@@ -6,7 +6,7 @@ target-version = "py312"
 select = ["E", "F", "I", "W", "UP", "B"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=transpose --cov=app --cov-report=term-missing --cov-fail-under=95"
+addopts = "--cov=transpose --cov=app --cov=seo --cov-report=term-missing --cov-fail-under=95"
 testpaths = [
     "src/test_transpose.py",
     "src/test_app.py",
@@ -16,7 +16,7 @@ testpaths = [
 pythonpath = ["src"]
 
 [tool.coverage.run]
-source = ["transpose", "app"]
+source = ["transpose", "app", "seo"]
 
 [tool.coverage.report]
 exclude_also = ['if __name__ == "__main__":']

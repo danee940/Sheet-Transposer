@@ -43,22 +43,29 @@ runs two services:
 
 The `/health` endpoint is used as the deploy healthcheck.
 
-## Styling
+## Frontend assets
 
-The stylesheet is prebuilt with Tailwind into `src/static/tailwind.css` and shipped
-as a normal static asset, so no CDN runs in the browser. The committed CSS file is
-cache-busted via a content hash appended as `?v=` to its URL, and served with a
-long-lived immutable cache header, while HTML pages are sent with `no-cache`.
+Both the stylesheet and the browser JavaScript are prebuilt and shipped as normal
+static assets, so no CDN runs in the browser. The Docker image ships these files
+as-is and does not run Node.
 
-Rebuild the stylesheet after changing markup or `tailwind.config.js`:
+- **CSS**: Tailwind builds `src/static/tailwind.css` from `src/styles/tailwind.input.css`.
+- **JS**: Vite bundles `src/js/` into hashed assets under `src/static/js/` with a
+  `manifest.json`; `app.py` reads the manifest to inject the correct bundle URL.
+
+Both committed outputs are cache-busted (CSS via a `?v=` content hash, JS via
+hashed filenames) and served with a long-lived immutable cache header, while HTML
+pages are sent with `no-cache`.
+
+Rebuild after changing markup, `tailwind.config.js`, or any file under `src/js/`:
 
 ```bash
 npm install
-npm run build:css
+npm run build       # CSS + JS; or build:css / build:js individually
 ```
 
-Use `npm run watch:css` during development. Commit the regenerated
-`src/static/tailwind.css`; the Docker image does not build it.
+Use `npm run watch:css` (CSS) or `npm run dev` (JS watch) during development.
+Commit the regenerated `src/static/tailwind.css` and `src/static/js/`.
 
 ## Development
 
@@ -69,7 +76,14 @@ ruff format --check .
 pytest
 ```
 
-Coverage of `transpose.py` must stay at or above 95%.
+Combined coverage of `transpose.py`, `app.py`, and `seo.py` must stay at or
+above 95%.
+
+Frontend modules under `src/js/` have their own coverage-gated suite:
+
+```bash
+npm run test:js
+```
 
 ## Support
 
