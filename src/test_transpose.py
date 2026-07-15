@@ -1046,3 +1046,65 @@ class TestGotenbergUrl:
     def test_reads_env_and_strips_trailing_slash(self):
         with patch.dict("os.environ", {"GOTENBERG_URL": "http://gotenberg:3000/"}):
             assert t._gotenberg_url() == "http://gotenberg:3000"
+
+
+class TestTransposeText:
+    def test_transposes_chord_line(self):
+        text, from_label, to_label, changes = t.transpose_text("C G Am F", "C", "D")
+        assert text == "D A Bm G"
+        assert from_label == "C"
+        assert to_label == "D"
+        assert ("C", "D") in changes
+
+    def test_leaves_lyric_lines_untouched(self):
+        text, _, _, _ = t.transpose_text("C G\nThese are the lyrics", "C", "D")
+        assert text == "D A\nThese are the lyrics"
+
+    def test_preserves_blank_lines_and_structure(self):
+        source = "C G\n\nAm F\n"
+        result, _, _, _ = t.transpose_text(source, "C", "D")
+        assert result == "D A\n\nBm G\n"
+
+    def test_no_trailing_newline_preserved(self):
+        result, _, _, _ = t.transpose_text("C G", "C", "D")
+        assert not result.endswith("\n")
+
+    def test_crlf_line_endings_preserved(self):
+        result, _, _, _ = t.transpose_text("C G\r\nAm F\r\n", "C", "D")
+        assert result == "D A\r\nBm G\r\n"
+
+    def test_lone_cr_line_ending_preserved(self):
+        result, _, _, _ = t.transpose_text("C G\r", "C", "D")
+        assert result == "D A\r"
+
+    def test_embedded_control_char_not_treated_as_newline(self):
+        result, _, _, _ = t.transpose_text("some\x0blyric", "C", "D")
+        assert result == "some\x0blyric"
+
+    def test_empty_text_returns_empty(self):
+        result, from_label, to_label, changes = t.transpose_text("", "C", "D")
+        assert result == ""
+        assert changes == []
+        assert (from_label, to_label) == ("C", "D")
+
+    def test_target_flat_key_uses_flat_spelling(self):
+        result, _, _, _ = t.transpose_text("C", "C", "Eb")
+        assert result == "Eb"
+        result, _, _, _ = t.transpose_text("D", "C", "Eb")
+        assert result == "F"
+
+    def test_german_notation_detected(self):
+        result, _, _, _ = t.transpose_text("H", "H", "C")
+        assert result == "C"
+
+    def test_invalid_current_key_raises(self):
+        with pytest.raises(t.InvalidKeyError, match="not a valid key"):
+            t.transpose_text("C", "X", "D")
+
+    def test_invalid_target_key_raises(self):
+        with pytest.raises(t.InvalidKeyError, match="not a valid key"):
+            t.transpose_text("C", "C", "X")
+
+    def test_slash_chords_transposed(self):
+        result, _, _, _ = t.transpose_text("C/E  G/B", "C", "D")
+        assert result.split() == ["D/F#", "A/C#"]

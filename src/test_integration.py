@@ -543,3 +543,30 @@ class TestMetadata:
         _, from_label, to_label, _ = t.transpose_document_bytes(file_bytes, "Am", "Bm")
         assert from_label == "Am"
         assert to_label == "Bm"
+
+
+class TestTranposeTextEndToEnd:
+    def test_multiline_sheet_matches_docx_path(self):
+        source = "C       G\nAm      F\nLyrics line here\n\nF       C"
+        text_result, _, _, text_changes = t.transpose_text(source, "C", "D")
+
+        docx_bytes = _make_docx(*source.split("\n"))
+        docx_out, _, _, docx_changes = t.transpose_document_bytes(docx_bytes, "C", "D")
+        docx_lines = _paragraphs(docx_out)
+
+        transposed_chord_lines = [line for line in text_result.split("\n") if line.strip()]
+        assert docx_lines == transposed_chord_lines
+        assert text_changes == docx_changes
+        assert "Lyrics line here" in text_result
+
+    def test_german_sheet_stays_german(self):
+        source = "H Es B\nFis Cis Gis"
+        result, from_label, to_label, _ = t.transpose_text(source, "H", "C")
+        assert from_label == "H"
+        assert to_label == "C"
+        assert result.split("\n")[0].startswith("C")
+
+    def test_spacing_preserved_across_chord_width_change(self):
+        source = "C   F#  G"
+        result, _, _, _ = t.transpose_text(source, "C", "Db")
+        assert result.split("\n")[0].startswith("Db")

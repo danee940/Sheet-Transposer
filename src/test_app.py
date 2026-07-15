@@ -172,3 +172,58 @@ def test_transpose_pdf_conversion_failure(client, monkeypatch):
 
     assert response.status_code == 503
     assert "timed out" in response.get_json()["error"]
+
+
+def test_transpose_text_success(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C G Am F", "current_key": "C", "target_key": "D"},
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["text"] == "D A Bm G"
+    assert body["from"] == "C"
+    assert body["to"] == "D"
+    assert {"from": "C", "to": "D"} in body["changes"]
+
+
+def test_transpose_text_missing_text(client):
+    response = client.post(
+        "/transpose-text",
+        json={"current_key": "C", "target_key": "D"},
+    )
+    assert response.status_code == 400
+    assert "No text" in response.get_json()["error"]
+
+
+def test_transpose_text_missing_keys(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C G", "current_key": "", "target_key": ""},
+    )
+    assert response.status_code == 400
+    assert "keys are required" in response.get_json()["error"]
+
+
+def test_transpose_text_invalid_key(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C G", "current_key": "X", "target_key": "D"},
+    )
+    assert response.status_code == 400
+    assert "not a valid key" in response.get_json()["error"]
+
+
+def test_transpose_text_too_long(client):
+    response = client.post(
+        "/transpose-text",
+        json={"text": "C " * 11_000, "current_key": "C", "target_key": "D"},
+    )
+    assert response.status_code == 400
+    assert "too long" in response.get_json()["error"]
+
+
+def test_transpose_text_empty_body(client):
+    response = client.post("/transpose-text", data=b"", content_type="application/json")
+    assert response.status_code == 400
+    assert "No text" in response.get_json()["error"]

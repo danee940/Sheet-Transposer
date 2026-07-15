@@ -539,6 +539,52 @@ def convert_docx_to_pdf(docx_bytes):
     return response.content
 
 
+def _text_uses_german(text):
+    """Return True if any chord line in the text uses German note notation."""
+    for line in text.splitlines():
+        if is_chord_line(line) and line_uses_german(line):
+            return True
+    return False
+
+
+def transpose_text(text, current_key, target_key):
+    """Transpose chord lines in plain text and return (text, from_label, to_label, changes).
+
+    Only lines detected as chord lines are transposed; lyric and blank lines are
+    left untouched. Notation, spelling, and German H handling match the .docx path.
+    """
+    current = parse_key(current_key)
+    if current is None:
+        raise InvalidKeyError(f"'{current_key}' is not a valid key.")
+    target = parse_key(target_key)
+    if target is None:
+        raise InvalidKeyError(f"'{target_key}' is not a valid key.")
+
+    current_note, current_minor = current
+    target_note, target_minor = target
+
+    german = _text_uses_german(text)
+    semitones = (key_semitone(target_note, german) - key_semitone(current_note, german)) % 12
+    use_flats = prefers_flats(target_note, target_minor)
+    spelling = choose_spelling(use_flats, german)
+
+    changes: set[tuple[str, str]] = set()
+    result_parts = []
+    for segment in text.splitlines(keepends=True):
+        content = segment.splitlines()[0]
+        ending = segment[len(content) :]
+        if is_chord_line(content):
+            content = transpose_line_text(content, semitones, spelling, german, changes)
+        result_parts.append(content + ending)
+
+    result = "".join(result_parts)
+
+    from_label = key_label(current_note, current_minor)
+    to_label = key_label(target_note, target_minor)
+
+    return result, from_label, to_label, sorted(changes)
+
+
 def transpose_document_bytes(file_bytes, current_key, target_key):
     """Transpose a .docx given as bytes and return (docx_bytes, from_label, to_label, changes)."""
     current = parse_key(current_key)

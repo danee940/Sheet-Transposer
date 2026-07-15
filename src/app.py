@@ -14,9 +14,11 @@ from transpose import (
     PdfConversionError,
     convert_docx_to_pdf,
     transpose_document_bytes,
+    transpose_text,
 )
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_TEXT_CHARS = 20_000
 
 SITE_URL = "https://chordtransposer.app"
 
@@ -130,6 +132,36 @@ def sitemap():
         "</urlset>\n"
     )
     return Response(body, mimetype="application/xml")
+
+
+@app.route("/transpose-text", methods=["POST"])
+def transpose_text_route():
+    """Transpose chords in pasted text and return the result as JSON for live preview."""
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text")
+    current_key = (payload.get("current_key") or "").strip()
+    target_key = (payload.get("target_key") or "").strip()
+
+    if not isinstance(text, str):
+        return jsonify({"error": "No text provided."}), 400
+    if not current_key or not target_key:
+        return jsonify({"error": "Both current and desired keys are required."}), 400
+    if len(text) > MAX_TEXT_CHARS:
+        return jsonify({"error": "Text is too long. The maximum is 20,000 characters."}), 400
+
+    try:
+        result_text, from_label, to_label, changes = transpose_text(text, current_key, target_key)
+    except InvalidKeyError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify(
+        {
+            "text": result_text,
+            "from": from_label,
+            "to": to_label,
+            "changes": [{"from": a, "to": b} for a, b in changes],
+        }
+    )
 
 
 @app.route("/transpose", methods=["POST"])
